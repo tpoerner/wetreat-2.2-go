@@ -131,12 +131,10 @@ async function setupDatabase() {
 
     } catch (err) {
         console.error('Database connection or setup error', err);
+        // Exit the process if the database setup fails. Railway will restart it.
+        process.exit(1);
     }
 }
-
-// Execute database setup on server startup
-setupDatabase();
-
 
 // --- API Endpoints ---
 
@@ -323,7 +321,12 @@ app.get('/api/generate-pdf/:id', async (req, res) => {
     }
 });
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Start the server only after the database setup is complete
+async function startServer() {
+    await setupDatabase();
+    app.listen(PORT, () => {
+        console.log(`Server is running on http://localhost:${PORT}`);
+    });
+}
+
+startServer();
