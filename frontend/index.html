@@ -186,7 +186,7 @@ You will need to replace the BACKEND_URL variable with the URL of your deployed 
 
         // IMPORTANT: Replace this with the actual URL of your deployed Railway backend.
         // E.g., const BACKEND_URL = 'https://wetreat-22-go-production.up.railway.app';
-        const BACKEND_URL = 'https://wetreat-22-go-production.up.railway.app'; 
+        const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:3000";
 
         // Add event listeners for role selection buttons
         patientBtn.addEventListener('click', () => {
