@@ -1,0 +1,688 @@
+<!--
+This is the updated HTML/JS frontend designed to make real API calls to a backend server.
+The in-browser "backend" logic has been removed.
+You will need to replace the wetreat-22-go-production.up.railway.app variable with the URL of your deployed Railway application.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardiovascular Consultation</title>
+    <!-- Load Tailwind CSS from CDN for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font from Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl mx-auto">
+        <!-- WeTreat Logo -->
+        <div class="flex justify-center mb-6">
+            <img src="https://storage.googleapis.com/gimini-public-assets/wt_logonew_whitecanvas.jpg" alt="WeTreat Logo" class="h-16 w-auto" onerror="this.src='https://placehold.co/128x64/E2E8F0/1A202C?text=WeTreat%20Logo'">
+        </div>
+
+        <!-- Initial Role Selection Section -->
+        <div id="role-selection-section" class="space-y-4">
+            <h2 class="text-2xl font-semibold text-center text-gray-700">Medical Consultation Platform</h2>
+            <button id="patient-btn" class="w-full bg-blue-600 text-white font-semibold py-4 px-4 rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+                Patient Input
+            </button>
+            <button id="admin-btn" class="w-full bg-yellow-600 text-white font-semibold py-4 px-4 rounded-lg hover:bg-yellow-700 transition-colors shadow-md">
+                Administrative Tasks
+            </button>
+            <button id="doctor-btn" class="w-full bg-green-600 text-white font-semibold py-4 px-4 rounded-lg hover:bg-green-700 transition-colors shadow-md">
+                Medical Consultation
+            </button>
+        </div>
+
+        <!-- Login Form Section (Initially Hidden) -->
+        <div id="login-section" class="hidden space-y-4">
+            <h2 id="login-title" class="text-2xl font-semibold text-center text-gray-700"></h2>
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <input type="text" id="username" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input type="password" id="password" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <button id="login-btn" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                Log In
+            </button>
+            <button id="back-btn" class="w-full bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg hover:bg-gray-500 transition-colors">
+                &larr; Back
+            </button>
+        </div>
+
+        <!-- Patient Input Section (Initially Hidden) -->
+        <div id="patient-input-section" class="hidden space-y-6">
+            <h2 class="text-2xl font-semibold text-center text-gray-700">Patient Input</h2>
+            
+            <!-- Section 1: Demographics -->
+            <div class="bg-gray-100 p-4 rounded-lg space-y-2">
+                <h3 class="text-xl font-medium text-gray-700">1. Demographics</h3>
+                <div>
+                    <label for="patient-name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <input type="text" id="patient-name" class="w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label for="patient-email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                    <input type="email" id="patient-email" class="w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label for="patient-dob" class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                    <input type="date" id="patient-dob" class="w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+            </div>
+
+            <!-- Section 2: Medical Information -->
+            <div class="bg-gray-100 p-4 rounded-lg space-y-2">
+                <h3 class="text-xl font-medium text-gray-700">2. Medical Information</h3>
+                <div>
+                    <label for="patient-symptoms" class="block text-sm font-medium text-gray-700 mb-1">Symptoms</label>
+                    <textarea id="patient-symptoms" rows="3" class="w-full p-2 border border-gray-300 rounded-lg"></textarea>
+                </div>
+                <div>
+                    <label for="patient-medical-history" class="block text-sm font-medium text-gray-700 mb-1">Medical History</label>
+                    <textarea id="patient-medical-history" rows="3" class="w-full p-2 border border-gray-300 rounded-lg"></textarea>
+                </div>
+                <div>
+                    <label for="patient-medication" class="block text-sm font-medium text-gray-700 mb-1">Current Medication</label>
+                    <textarea id="patient-medication" rows="3" class="w-full p-2 border border-gray-300 rounded-lg"></textarea>
+                </div>
+                <h4 class="text-lg font-medium text-gray-700 mt-4">Medical Documents</h4>
+                <div id="document-fields" class="space-y-2">
+                    <!-- Document fields will be added dynamically here -->
+                </div>
+                <button id="add-document-btn" class="w-full bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors">
+                    Add Document
+                </button>
+            </div>
+
+            <!-- Section 3: Notes -->
+            <div class="bg-gray-100 p-4 rounded-lg space-y-2">
+                <h3 class="text-xl font-medium text-gray-700">3. Patient's Notes</h3>
+                <div>
+                    <textarea id="patient-notes" rows="5" class="w-full p-2 border border-gray-300 rounded-lg"></textarea>
+                </div>
+            </div>
+
+            <button id="submit-patient-btn" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                Submit Patient Record
+            </button>
+            <button id="back-from-patient-btn" class="w-full bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg hover:bg-gray-500 transition-colors">
+                &larr; Back
+            </button>
+        </div>
+
+        <!-- Dashboard Section (Initially Hidden) -->
+        <div id="dashboard-section" class="hidden space-y-4">
+            <h2 class="text-2xl font-semibold text-center text-gray-700">
+                Welcome, <span id="user-name" class="font-bold"></span>!
+            </h2>
+            <p class="text-center text-gray-600">
+                You are logged in as a <span id="user-role" class="font-bold"></span>.
+            </p>
+            <!-- Content will be dynamically added here based on role -->
+            <div id="dynamic-content-area" class="space-y-4"></div>
+            <button id="logout-btn" class="w-full bg-red-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-red-700 transition-colors">
+                Log Out
+            </button>
+        </div>
+        
+        <!-- Message/Loading Box -->
+        <div id="message-box" class="mt-6 p-4 rounded-lg hidden transition-all"></div>
+    </div>
+
+    <script>
+        // Use a function to show messages instead of `alert()`
+        function showMessage(message, type = 'info') {
+            const box = document.getElementById('message-box');
+            box.textContent = message;
+            box.className = 'mt-6 p-4 rounded-lg transition-all'; // Reset classes
+            
+            if (type === 'error') {
+                box.classList.add('bg-red-100', 'text-red-800', 'block');
+            } else if (type === 'success') {
+                box.classList.add('bg-green-100', 'text-green-800', 'block');
+            } else {
+                box.classList.add('bg-gray-100', 'text-gray-800', 'block');
+            }
+        }
+        
+        let currentUser = null;
+        let selectedRole = null;
+        let selectedPatientId = null;
+        let selectedConsultationId = null;
+
+        const roleSelectionSection = document.getElementById('role-selection-section');
+        const loginSection = document.getElementById('login-section');
+        const patientInputSection = document.getElementById('patient-input-section');
+        const dashboardSection = document.getElementById('dashboard-section');
+        
+        const patientBtn = document.getElementById('patient-btn');
+        const adminBtn = document.getElementById('admin-btn');
+        const doctorBtn = document.getElementById('doctor-btn');
+        const loginBtn = document.getElementById('login-btn');
+        const backBtn = document.getElementById('back-btn');
+        const backFromPatientBtn = document.getElementById('back-from-patient-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const addDocumentBtn = document.getElementById('add-document-btn');
+        const submitPatientBtn = document.getElementById('submit-patient-btn');
+
+        const loginTitle = document.getElementById('login-title');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const userNameSpan = document.getElementById('user-name');
+        const userRoleSpan = document.getElementById('user-role');
+        const dynamicContentArea = document.getElementById('dynamic-content-area');
+        const documentFields = document.getElementById('document-fields');
+
+        // IMPORTANT: Replace this with the actual URL of your deployed Railway backend.
+        // E.g., const wetreat-22-go-production.up.railway.app = 'https://your-app-name.railway.app';
+        const wetreat-22-go-production.up.railway.app = 'https://your-railway-app.railway.app'; 
+
+        // Add event listeners for role selection buttons
+        patientBtn.addEventListener('click', () => {
+            roleSelectionSection.classList.add('hidden');
+            patientInputSection.classList.remove('hidden');
+            showMessage('Welcome! Please enter your details.');
+        });
+
+        backFromPatientBtn.addEventListener('click', () => {
+            patientInputSection.classList.add('hidden');
+            roleSelectionSection.classList.remove('hidden');
+            document.getElementById('patient-name').value = '';
+            document.getElementById('patient-email').value = '';
+            document.getElementById('patient-dob').value = '';
+            document.getElementById('patient-symptoms').value = '';
+            document.getElementById('patient-medical-history').value = '';
+            document.getElementById('patient-medication').value = '';
+            document.getElementById('patient-notes').value = '';
+            documentFields.innerHTML = '';
+            showMessage('');
+        });
+
+        adminBtn.addEventListener('click', () => {
+            selectedRole = 'administrator';
+            loginTitle.textContent = 'Administrator Login';
+            usernameInput.placeholder = 'admin_user';
+            roleSelectionSection.classList.add('hidden');
+            loginSection.classList.remove('hidden');
+        });
+
+        doctorBtn.addEventListener('click', () => {
+            selectedRole = 'doctor';
+            loginTitle.textContent = 'Medical Consultation Login';
+            usernameInput.placeholder = 'dr.smith';
+            roleSelectionSection.classList.add('hidden');
+            loginSection.classList.remove('hidden');
+        });
+
+        // Add event listener for the "Back" button
+        backBtn.addEventListener('click', () => {
+            loginSection.classList.add('hidden');
+            roleSelectionSection.classList.remove('hidden');
+            usernameInput.value = '';
+            passwordInput.value = '';
+            showMessage('');
+        });
+
+        // Handle user login
+        loginBtn.addEventListener('click', async () => {
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+            showMessage('Logging in...', 'info');
+
+            try {
+                const response = await fetch(`${wetreat-22-go-production.up.railway.app}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentUser = data.user;
+                    showMessage('Login successful! Redirecting to dashboard...', 'success');
+                    
+                    // Update UI for logged-in user
+                    userNameSpan.textContent = currentUser.username;
+                    userRoleSpan.textContent = currentUser.role;
+                    loginSection.classList.add('hidden');
+                    dashboardSection.classList.remove('hidden');
+                    renderDashboardContent(currentUser.role);
+
+                } else {
+                    showMessage(data.message || 'Login failed.', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showMessage('Network error. Please check your connection.', 'error');
+            }
+        });
+
+        // Handle logout
+        logoutBtn.addEventListener('click', () => {
+            currentUser = null;
+            selectedRole = null;
+            dashboardSection.classList.add('hidden');
+            roleSelectionSection.classList.remove('hidden');
+            usernameInput.value = '';
+            passwordInput.value = '';
+            dynamicContentArea.innerHTML = '';
+            showMessage('You have been logged out.');
+        });
+        
+        // Add a new document field to the patient input form
+        addDocumentBtn.addEventListener('click', () => {
+            const documentInputDiv = document.createElement('div');
+            documentInputDiv.className = 'flex space-x-2';
+            documentInputDiv.innerHTML = `
+                <input type="text" placeholder="Document URL" class="w-2/3 p-2 border border-gray-300 rounded-lg document-url">
+                <input type="text" placeholder="Description (e.g., ECG)" class="w-1/3 p-2 border border-gray-300 rounded-lg document-desc">
+            `;
+            documentFields.appendChild(documentInputDiv);
+        });
+
+        // Handle patient form submission
+        submitPatientBtn.addEventListener('click', async () => {
+            const documents = [];
+            documentFields.querySelectorAll('.flex').forEach(docDiv => {
+                const url = docDiv.querySelector('.document-url').value;
+                const desc = docDiv.querySelector('.document-desc').value;
+                if (url && desc) {
+                    documents.push({ url, description: desc });
+                }
+            });
+
+            const patientData = {
+                fullName: document.getElementById('patient-name').value,
+                email: document.getElementById('patient-email').value,
+                dob: document.getElementById('patient-dob').value,
+                symptoms: document.getElementById('patient-symptoms').value,
+                medicalHistory: document.getElementById('patient-medical-history').value,
+                medication: document.getElementById('patient-medication').value,
+                documents: documents,
+                notes: document.getElementById('patient-notes').value,
+                timestamp: new Date().toISOString()
+            };
+
+            // Placeholder for API call
+            console.log('Patient Data to be submitted:', patientData);
+            showMessage('Submitting patient data...', 'info');
+
+            // Here you would make a fetch call to the backend
+            // try {
+            //     const response = await fetch(`${wetreat-22-go-production.up.railway.app}/api/submit-patient-record`, {
+            //         method: 'POST',
+            //         headers: { 'Content-Type': 'application/json' },
+            //         body: JSON.stringify(patientData)
+            //     });
+            //     const data = await response.json();
+            //     if (response.ok) {
+            //         showMessage('Patient record submitted successfully!', 'success');
+            //     } else {
+            //         showMessage(data.message || 'Failed to submit record.', 'error');
+            //     }
+            // } catch (error) {
+            //     console.error('Submission error:', error);
+            //     showMessage('Network error. Please try again later.', 'error');
+            // }
+        });
+
+
+        // Function to render different dashboard content based on user role
+        function renderDashboardContent(role) {
+            dynamicContentArea.innerHTML = ''; // Clear previous content
+
+            if (role === 'patient') {
+                dynamicContentArea.innerHTML = `
+                    <button id="consult-btn" class="w-full bg-green-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors">
+                        Start a Consultation
+                    </button>
+                    <p id="consultation-info" class="text-center text-gray-600 mt-4"></p>
+                `;
+                // Re-add the event listener for the new button
+                document.getElementById('consult-btn').addEventListener('click', handleConsultation);
+            } else if (role === 'doctor') {
+                renderDoctorDashboard();
+            } else if (role === 'administrator') {
+                // Administrator's form to manage users
+                dynamicContentArea.innerHTML = `
+                    <div class="bg-gray-100 p-4 rounded-lg space-y-4">
+                        <h3 class="text-xl font-medium text-gray-700">Create New User</h3>
+                        <div>
+                            <label for="new-username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                            <input type="text" id="new-username" class="w-full p-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label for="new-password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <input type="password" id="new-password" class="w-full p-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label for="new-user-role" class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                            <select id="new-user-role" class="w-full p-2 border border-gray-300 rounded-lg">
+                                <option value="doctor">Consulting Physician</option>
+                                <option value="administrator">Administrator</option>
+                            </select>
+                        </div>
+                        <button id="create-user-btn" class="w-full bg-cyan-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-cyan-700 transition-colors">
+                            Create User
+                        </button>
+                    </div>
+
+                    <div class="bg-gray-100 p-4 rounded-lg space-y-4">
+                        <h3 class="text-xl font-medium text-gray-700">Assign Patient Records</h3>
+                        <p class="text-center text-gray-600">
+                            This is where the interface for assigning patient records would go.
+                            It would require fetching lists of patients and doctors from the backend.
+                        </p>
+                        <button id="assign-patients-btn" class="w-full bg-orange-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-orange-700 transition-colors">
+                            Assign Patients
+                        </button>
+                    </div>
+                `;
+                // Re-add event listener for new button
+                document.getElementById('create-user-btn').addEventListener('click', handleUserCreation);
+            }
+        }
+        
+        // New function to handle doctor's dashboard content
+        function renderDoctorDashboard() {
+            // Placeholder for a list of assigned patients/consultations
+            const patients = [
+                { id: 'pat-123', name: 'John Doe', consultationId: 'con-001', status: 'open' },
+                { id: 'pat-124', name: 'Jane Smith', consultationId: 'con-002', status: 'closed' },
+                { id: 'pat-125', name: 'Peter Jones', consultationId: null, status: 'open' }
+            ];
+
+            const patientsListHtml = patients.map(patient => `
+                <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm cursor-pointer hover:bg-gray-50" data-patient-id="${patient.id}" data-consultation-id="${patient.consultationId}">
+                    <p class="font-medium text-gray-700">${patient.name}</p>
+                    <span class="text-xs font-semibold px-2 py-1 rounded-full ${patient.status === 'open' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}">
+                        ${patient.status}
+                    </span>
+                </div>
+            `).join('');
+
+            dynamicContentArea.innerHTML = `
+                <h3 class="text-xl font-medium text-gray-700">My Assigned Consultations</h3>
+                <div class="space-y-2" id="consultation-list">
+                    ${patientsListHtml}
+                </div>
+            `;
+            
+            // Add click listeners to the list items
+            document.querySelectorAll('#consultation-list > div').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const patientId = e.currentTarget.dataset.patientId;
+                    const consultationId = e.currentTarget.dataset.consultationId;
+                    const patientName = e.currentTarget.querySelector('p').textContent;
+                    selectedPatientId = patientId;
+                    selectedConsultationId = consultationId;
+                    renderMedicalConsultationForm(patientName, consultationId);
+                });
+            });
+        }
+        
+        // Function to render the medical consultation form
+        function renderMedicalConsultationForm(patientName, consultationId) {
+            const isNewConsultation = !consultationId;
+            const isClosed = consultationId === 'con-002'; // Placeholder for checking status
+            
+            dynamicContentArea.innerHTML = `
+                <h3 class="text-xl font-semibold text-gray-700">Medical Consultation for ${patientName}</h3>
+                <form id="consultation-form" class="space-y-4">
+                    <!-- Physician details (read-only) -->
+                    <div class="p-3 bg-gray-100 rounded-lg">
+                        <p class="font-semibold">Physician: ${currentUser.username}</p>
+                        <p class="text-sm text-gray-600">Email: ${currentUser.email || 'N/A'}</p>
+                    </div>
+
+                    <!-- 1. Consultation Description -->
+                    <div class="bg-gray-100 p-4 rounded-lg space-y-2">
+                        <h4 class="text-lg font-medium text-gray-700">1. Consultation Description</h4>
+                        <div class="flex items-center space-x-4">
+                            <label class="flex items-center">
+                                <input type="radio" name="consultationType" value="personal" class="mr-2" ${isClosed ? 'disabled' : ''}>
+                                Personal
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="consultationType" value="online" class="mr-2" ${isClosed ? 'disabled' : ''}>
+                                Online
+                            </label>
+                            <label class="flex items-center ml-auto">
+                                <input type="checkbox" id="blinded" class="mr-2" ${isClosed ? 'disabled' : ''}>
+                                Blinded
+                            </label>
+                        </div>
+                        <div id="online-options" class="ml-8 hidden space-x-4">
+                            <label class="flex items-center">
+                                <input type="radio" name="onlineType" value="video" class="mr-2" ${isClosed ? 'disabled' : ''}>
+                                Video
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="onlineType" value="phone call" class="mr-2" ${isClosed ? 'disabled' : ''}>
+                                Phone Call
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="onlineType" value="document review only" class="mr-2" ${isClosed ? 'disabled' : ''}>
+                                Document Review Only
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- 2. Findings -->
+                    <div class="bg-gray-100 p-4 rounded-lg space-y-2">
+                        <h4 class="text-lg font-medium text-gray-700">2. Findings</h4>
+                        <textarea id="findings" rows="4" class="w-full p-2 border border-gray-300 rounded-lg" ${isClosed ? 'disabled' : ''}></textarea>
+                    </div>
+
+                    <!-- 3. Recommendations -->
+                    <div class="bg-gray-100 p-4 rounded-lg space-y-2">
+                        <h4 class="text-lg font-medium text-gray-700">3. Recommendations</h4>
+                        <textarea id="recommendations" rows="4" class="w-full p-2 border border-gray-300 rounded-lg" ${isClosed ? 'disabled' : ''}></textarea>
+                    </div>
+
+                    <!-- 4. Physician's Notes -->
+                    <div class="bg-gray-100 p-4 rounded-lg space-y-2">
+                        <h4 class="text-lg font-medium text-gray-700">4. Physician's Notes</h4>
+                        <textarea id="physician-notes" rows="4" class="w-full p-2 border border-gray-300 rounded-lg" ${isClosed ? 'disabled' : ''}></textarea>
+                    </div>
+                    
+                    ${isClosed ? `
+                        <button type="button" class="w-full bg-gray-500 text-white font-semibold py-3 px-4 rounded-lg cursor-not-allowed" disabled>
+                            Consultation Closed
+                        </button>
+                        <button id="generate-pdf-btn" type="button" class="w-full bg-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors">
+                            Generate PDF Report
+                        </button>
+                    ` : `
+                        <div class="flex space-x-4">
+                            <button id="save-consultation-btn" type="button" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                                Save (Open State)
+                            </button>
+                            <button id="close-consultation-btn" type="button" class="w-full bg-green-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors">
+                                Close & Submit
+                            </button>
+                        </div>
+                    `}
+                    <button id="back-to-list-btn" type="button" class="w-full bg-gray-400 text-white font-semibold py-3 px-4 rounded-lg hover:bg-gray-500 transition-colors">
+                        &larr; Back to List
+                    </button>
+                </form>
+            `;
+
+            // Add event listeners for the new form
+            document.querySelectorAll('input[name="consultationType"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    document.getElementById('online-options').classList.toggle('hidden', e.target.value !== 'online');
+                });
+            });
+            
+            const generatePdfBtn = document.getElementById('generate-pdf-btn');
+            if (generatePdfBtn) {
+                generatePdfBtn.addEventListener('click', () => generatePDFReport(selectedConsultationId));
+            }
+
+            const saveBtn = document.getElementById('save-consultation-btn');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => saveConsultation(false));
+            }
+            
+            const closeBtn = document.getElementById('close-consultation-btn');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => saveConsultation(true));
+            }
+            
+            document.getElementById('back-to-list-btn').addEventListener('click', renderDoctorDashboard);
+        }
+        
+        async function saveConsultation(isClosed) {
+            const consultationType = document.querySelector('input[name="consultationType"]:checked')?.value;
+            const onlineType = document.querySelector('input[name="onlineType"]:checked')?.value;
+            const blinded = document.getElementById('blinded').checked;
+            
+            const consultationData = {
+                patientId: selectedPatientId,
+                consultationId: selectedConsultationId,
+                physicianId: currentUser.id,
+                physicianName: currentUser.username,
+                physicianEmail: currentUser.email,
+                timestamp: new Date().toISOString(),
+                status: isClosed ? 'closed' : 'open',
+                consultationDescription: {
+                    type: consultationType,
+                    onlineType: consultationType === 'online' ? onlineType : null,
+                    blinded: blinded
+                },
+                findings: document.getElementById('findings').value,
+                recommendations: document.getElementById('recommendations').value,
+                physicianNotes: document.getElementById('physician-notes').value
+            };
+            
+            console.log('Consultation Data to be saved:', consultationData);
+            showMessage('Saving consultation...', 'info');
+            
+            // Placeholder for API call
+            // try {
+            //     const endpoint = selectedConsultationId ? `/api/update-consultation` : `/api/create-consultation`;
+            //     const response = await fetch(`${wetreat-22-go-production.up.railway.app}${endpoint}`, {
+            //         method: 'POST',
+            //         headers: { 'Content-Type': 'application/json' },
+            //         body: JSON.stringify(consultationData)
+            //     });
+            //     const data = await response.json();
+            //     if (response.ok) {
+            //         showMessage('Consultation saved successfully!', 'success');
+            //         renderDoctorDashboard(); // Return to list after saving
+            //     } else {
+            //         showMessage(data.message || 'Failed to save consultation.', 'error');
+            //     }
+            // } catch (error) {
+            //     console.error('Consultation save error:', error);
+            //     showMessage('Network error. Please try again later.', 'error');
+            // }
+        }
+        
+        async function generatePDFReport(consultationId) {
+            console.log('Generating PDF for consultation ID:', consultationId);
+            showMessage('Generating PDF report...', 'info');
+
+            // Placeholder for API call to a backend service that generates PDFs
+            // try {
+            //     const response = await fetch(`${wetreat-22-go-production.up.railway.app}/api/generate-pdf/${consultationId}`);
+            //     if (response.ok) {
+            //         const blob = await response.blob();
+            //         const url = window.URL.createObjectURL(blob);
+            //         const a = document.createElement('a');
+            //         a.href = url;
+            //         a.download = `Consultation_Report_${consultationId}.pdf`;
+            //         document.body.appendChild(a);
+            //         a.click();
+            //         a.remove();
+            //         window.URL.revokeObjectURL(url);
+            //         showMessage('PDF report generated and downloaded!', 'success');
+            //     } else {
+            //         const data = await response.json();
+            //         showMessage(data.message || 'Failed to generate PDF.', 'error');
+            //     }
+            // } catch (error) {
+            //     console.error('PDF generation error:', error);
+            //     showMessage('Network error. Please try again later.', 'error');
+            // }
+        }
+
+        async function handleConsultation() {
+            if (!currentUser || currentUser.role !== 'patient') {
+                showMessage('Only patients can request a consultation.', 'error');
+                return;
+            }
+
+            showMessage('Requesting consultation...', 'info');
+
+            try {
+                const response = await fetch(`${wetreat-22-go-production.up.railway.app}/api/start-consultation`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ patientId: currentUser.id })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('consultation-info').innerHTML = `
+                        <p class="font-bold">Consultation started!</p>
+                        <p>Status: ${data.consultation.status}</p>
+                        <p>Meeting URL: <a href="${data.meetingUrl}" target="_blank" class="text-blue-600 underline">${data.meetingUrl}</a></p>
+                    `;
+                    showMessage('Consultation request sent successfully!', 'success');
+                } else {
+                    showMessage(data.message || 'Failed to start consultation.', 'error');
+                }
+            } catch (error) {
+                console.error('Consultation error:', error);
+                showMessage('Network error. Please try again later.', 'error');
+            }
+        }
+
+        async function handleUserCreation() {
+            const newUsername = document.getElementById('new-username').value;
+            const newPassword = document.getElementById('new-password').value;
+            const newUserRole = document.getElementById('new-user-role').value;
+
+            // Placeholder for API call
+            console.log('Creating user:', { newUsername, newPassword, newUserRole });
+            showMessage('Creating new user...', 'info');
+
+            // Here you would make a fetch call to the backend
+            // try {
+            //     const response = await fetch(`${wetreat-22-go-production.up.railway.app}/api/create-user`, {
+            //         method: 'POST',
+            //         headers: { 'Content-Type': 'application/json' },
+            //         body: JSON.stringify({ username: newUsername, password: newPassword, role: newUserRole })
+            //     });
+            //     const data = await response.json();
+            //     if (response.ok) {
+            //         showMessage('User created successfully!', 'success');
+            //         document.getElementById('new-username').value = '';
+            //         document.getElementById('new-password').value = '';
+            //     } else {
+            //         showMessage(data.message || 'Failed to create user.', 'error');
+            //     }
+            // } catch (error) {
+            //     console.error('User creation error:', error);
+            //     showMessage('Network error. Please try again later.', 'error');
+            // }
+        }
+    </script>
+</body>
+</html>
