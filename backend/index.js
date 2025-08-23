@@ -1,4 +1,4 @@
-        // backend/index.js
+// backend/index.js
 // This Node.js Express application serves as the backend for the medical consultation platform.
 // This version corrects the code order to ensure the server starts after all routes are defined.
 
