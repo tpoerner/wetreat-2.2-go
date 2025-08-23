@@ -39,11 +39,11 @@ async function setupDatabase() {
         console.log("Setting up database tables based on MVP schema...");
 
         // --- DEVELOPMENT ONLY: Drop existing tables to ensure a clean slate ---
-        console.log("Dropping existing tables for a clean setup...");
-        await pool.query(`DROP TABLE IF EXISTS emrs CASCADE;`);
-        await pool.query(`DROP TABLE IF EXISTS doctor_profiles CASCADE;`);
-        await pool.query(`DROP TABLE IF EXISTS users CASCADE;`);
-        console.log("Existing tables dropped.");
+       // console.log("Dropping existing tables for a clean setup...");
+      //  await pool.query(`DROP TABLE IF EXISTS emrs CASCADE;`);
+      //  await pool.query(`DROP TABLE IF EXISTS doctor_profiles CASCADE;`);
+     //   await pool.query(`DROP TABLE IF EXISTS users CASCADE;`);
+      //  console.log("Existing tables dropped.");
         // --- End of Development Only Section ---
 
         await pool.query(`
