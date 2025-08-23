@@ -5,13 +5,26 @@
 
 const express = require('express');
 const cors = require('cors');
+const app = express();
+
+// The URL of your live Netlify frontend
+const allowedOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+
+const corsOptions = {
+  origin: allowedOrigin
+};
+
+app.use(cors(corsOptions));
+
+// ... your other app.use() middleware and API routes
+// app.use('/api/patients', patientRoutes);
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
 const { Pool } = require('pg'); // Use Pool instead of Client
 const { v4: uuidv4 } = require('uuid');
 const PDFDocument = require('pdfkit');
-
-// Initialize Express app
-const app = express();
-const PORT = process.env.PORT || 3000;
 
 // Middleware setup
 app.use(cors()); // Enables Cross-Origin Resource Sharing
