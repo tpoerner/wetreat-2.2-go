@@ -1,13 +1,138 @@
-<!doctype html>
+// --- FILE: index.html ---
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WeTreat Platform</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div id="app" class="w-full max-w-md mx-auto">
+        
+        <!-- Welcome View -->
+        <div id="welcome-view" class="bg-white p-8 rounded-xl shadow-lg text-center">
+            <img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" alt="WeTreat Logo" class="mx-auto w-32 h-32 rounded-full mb-6 object-cover">
+            <h1 class="text-3xl font-bold text-gray-800">Welcome to WeTreat</h1>
+            <p class="text-gray-600 mt-2 mb-8">Your trusted online medical consultation platform.</p>
+            <div class="space-y-4">
+                <h2 class="text-lg font-semibold text-gray-700">Please select your role to continue:</h2>
+                <button 
+                    onclick="showView('patient-form-view')"
+                    class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-300">
+                    I am a Patient
+                </button>
+                <button 
+                    onclick="showView('login-view')"
+                    class="w-full bg-gray-700 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800 transition-colors duration-300">
+                    I am a Doctor or Admin
+                </button>
+            </div>
+        </div>
+
+        <!-- Login View (Initially Hidden) -->
+        <div id="login-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Doctor & Admin Portal</h2>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                    <input type="email" id="email" name="email" required autocomplete="email"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <button type="submit"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-700 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    Login
+                </button>
+            </form>
+            <div id="login-error" class="hidden mt-4 text-center text-sm text-red-600"></div>
+            <button onclick="showView('welcome-view')" class="mt-6 w-full text-center text-blue-600 hover:underline text-sm">&larr; Back to Welcome</button>
+        </div>
+
+        <!-- Patient Form View (Initially Hidden) -->
+        <div id="patient-form-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">New Consultation Request</h2>
+            <p class="text-center">Patient form will be added in a future step.</p>
+            <button onclick="showView('welcome-view')" class="mt-6 w-full text-center text-blue-600 hover:underline">&larr; Back to Welcome</button>
+        </div>
+
+        <!-- Admin Dashboard View (Initially Hidden) -->
+        <div id="admin-dashboard-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Admin Dashboard</h2>
+            <p>Welcome, Admin! The list of EMRs will appear here.</p>
+            <button onclick="logout()" class="mt-6 w-full text-center text-red-600 hover:underline">Logout</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- State Management ---
+        const API_URL = 'https://wetreat-22-go-production.up.railway.app'; 
+        let currentUser = null;
+
+        // --- View Switching Logic ---
+        function showView(viewId) {
+            const views = ['welcome-view', 'login-view', 'patient-form-view', 'admin-dashboard-view'];
+            views.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        // --- Authentication Logic ---
+        document.getElementById('login-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const errorDiv = document.getElementById('login-error');
+            errorDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: emailInput.value, password: passwordInput.value })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Login failed. Please check your credentials.');
+                }
+
+                const data = await response.json();
+                currentUser = data.user;
+                console.log('Login successful:', currentUser);
+
+                if (currentUser.role === 'admin') {
+                    showView('admin-dashboard-view');
+                } else {
+                    alert('Doctor dashboard is not yet implemented.');
+                }
+
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        });
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('login-form').reset();
+            showView('welcome-view');
+        }
+    </script>
+
+</body>
 </html>
