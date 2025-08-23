@@ -48,118 +48,99 @@
             </div>
         </div>
 
-        <!-- Login View (Initially Hidden) -->
+        <!-- Login View -->
         <div id="login-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Doctor & Admin Portal</h2>
             <form id="login-form" class="space-y-4">
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
-                    <input type="email" id="email" name="email" required autocomplete="email"
-                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <input type="email" id="email" name="email" required autocomplete="email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
                 </div>
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" id="password" name="password" required autocomplete="current-password"
-                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <input type="password" id="password" name="password" required autocomplete="current-password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
                 </div>
-                <button type="submit"
-                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-700 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                    Login
-                </button>
+                <button type="submit" class="w-full flex justify-center py-3 px-4 border rounded-md shadow-sm text-sm font-medium text-white bg-gray-700 hover:bg-gray-800">Login</button>
             </form>
             <div id="login-error" class="hidden mt-4 text-center text-sm text-red-600"></div>
             <button onclick="showView('welcome-view')" class="mt-6 w-full text-center text-blue-600 hover:underline text-sm">&larr; Back to Welcome</button>
         </div>
 
-        <!-- Patient Form View (Initially Hidden) -->
+        <!-- Patient Form View -->
         <div id="patient-form-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">New Consultation Request</h2>
             <p class="text-center text-gray-600 mb-6">Fill out the form below to submit your medical information for review.</p>
             <form id="patient-form" class="space-y-4">
                 <h3 class="text-lg font-semibold text-gray-700 border-b pb-2">Account Information</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="patient-email" class="block text-sm font-medium text-gray-700">Email Address</label>
-                        <input type="email" id="patient-email" name="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-                    </div>
-                    <div>
-                        <label for="patient-password" class="block text-sm font-medium text-gray-700">Choose a Password</label>
-                        <input type="password" id="patient-password" name="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-                    </div>
+                    <div><label for="patient-email" class="block text-sm font-medium text-gray-700">Email Address</label><input type="email" id="patient-email" name="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></div>
+                    <div><label for="patient-password" class="block text-sm font-medium text-gray-700">Choose a Password</label><input type="password" id="patient-password" name="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></div>
                 </div>
-
                 <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 pt-4">Personal & Medical Details</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="patient-name" class="block text-sm font-medium text-gray-700">Full Name</label>
-                        <input type="text" id="patient-name" name="name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-                    </div>
-                    <div>
-                        <label for="patient-dob" class="block text-sm font-medium text-gray-700">Date of Birth</label>
-                        <input type="date" id="patient-dob" name="dob" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-                    </div>
+                    <div><label for="patient-name" class="block text-sm font-medium text-gray-700">Full Name</label><input type="text" id="patient-name" name="name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></div>
+                    <div><label for="patient-dob" class="block text-sm font-medium text-gray-700">Date of Birth</label><input type="date" id="patient-dob" name="dob" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></div>
                 </div>
-                <div>
-                    <label for="patient-symptoms" class="block text-sm font-medium text-gray-700">Symptoms</label>
-                    <textarea id="patient-symptoms" name="symptoms" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea>
-                </div>
-                <div>
-                    <label for="patient-history" class="block text-sm font-medium text-gray-700">Medical History</label>
-                    <textarea id="patient-history" name="medicalHistory" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea>
-                </div>
-                 <div>
-                    <label for="patient-medication" class="block text-sm font-medium text-gray-700">Current Medication</label>
-                    <textarea id="patient-medication" name="medication" rows="2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea>
-                </div>
-                
-                <button type="submit" class="w-full flex justify-center py-3 px-4 mt-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-                    Submit for Review
-                </button>
+                <div><label for="patient-symptoms" class="block text-sm font-medium text-gray-700">Symptoms</label><textarea id="patient-symptoms" name="symptoms" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea></div>
+                <div><label for="patient-history" class="block text-sm font-medium text-gray-700">Medical History</label><textarea id="patient-history" name="medicalHistory" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea></div>
+                <div><label for="patient-medication" class="block text-sm font-medium text-gray-700">Current Medication</label><textarea id="patient-medication" name="medication" rows="2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea></div>
+                <button type="submit" class="w-full flex justify-center py-3 px-4 mt-4 border rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Submit for Review</button>
             </form>
             <div id="patient-form-message" class="hidden mt-4 text-center text-sm"></div>
             <button onclick="showView('welcome-view')" class="mt-6 w-full text-center text-blue-600 hover:underline text-sm">&larr; Back to Welcome</button>
         </div>
 
-        <!-- Admin Dashboard View (Initially Hidden) -->
+        <!-- Admin Dashboard View -->
         <div id="admin-dashboard-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
-                <button onclick="logout()" class="text-sm font-semibold text-red-600 hover:text-red-800">Logout</button>
+                <div class="flex space-x-4">
+                    <button onclick="showView('manage-doctors-view')" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Manage Doctors</button>
+                    <button onclick="logout()" class="text-sm font-semibold text-red-600 hover:text-red-800">Logout</button>
+                </div>
             </div>
-            <div id="emr-list-container" class="space-y-4">
-                <p id="emr-loading-state">Loading EMRs...</p>
-            </div>
+            <div id="emr-list-container" class="space-y-4"></div>
         </div>
         
-        <!-- EMR Detail View (Initially Hidden) -->
+        <!-- EMR Detail View -->
         <div id="emr-detail-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">Consultation Details</h2>
                 <button onclick="showView('admin-dashboard-view', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back to Dashboard</button>
             </div>
-            <div id="emr-detail-content" class="space-y-4">
-                <!-- Details will be populated here -->
-            </div>
-            
-            <!-- NEW: Admin Actions Section -->
+            <div id="emr-detail-content" class="space-y-4"></div>
             <div id="admin-actions-section" class="mt-6 pt-6 border-t">
                 <h3 class="text-lg font-semibold text-gray-700">Admin Actions</h3>
                 <form id="admin-update-form" class="space-y-4 mt-4">
                     <div>
                         <label for="assign-doctor" class="block text-sm font-medium text-gray-700">Assign Doctor</label>
-                        <select id="assign-doctor" name="assignedDoctorId" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                            <!-- Doctor options will be populated here -->
-                        </select>
+                        <select id="assign-doctor" name="assignedDoctorId" class="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"></select>
                     </div>
-                    <div class="flex items-center">
-                        <input id="payment-confirmed" name="isPaymentConfirmed" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                        <label for="payment-confirmed" class="ml-2 block text-sm text-gray-900">Payment Confirmed</label>
-                    </div>
-                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
-                        Save Changes
-                    </button>
+                    <div class="flex items-center"><input id="payment-confirmed" name="isPaymentConfirmed" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="payment-confirmed" class="ml-2 block text-sm text-gray-900">Payment Confirmed</label></div>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Save Changes</button>
                 </form>
                 <div id="admin-update-message" class="hidden mt-4 text-center text-sm"></div>
+            </div>
+        </div>
+
+        <!-- Manage Doctors View -->
+        <div id="manage-doctors-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Manage Doctors</h2>
+                <button onclick="showView('admin-dashboard-view')" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back to Dashboard</button>
+            </div>
+            <div class="mt-6 pt-6 border-t">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4">Create New Doctor</h3>
+                <form id="create-doctor-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label for="doc-name" class="block text-sm font-medium">Full Name</label><input type="text" id="doc-name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></div>
+                        <div><label for="doc-email" class="block text-sm font-medium">Email</label><input type="email" id="doc-email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></div>
+                        <div><label for="doc-password" class="block text-sm font-medium">Password</label><input type="password" id="doc-password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></div>
+                        <div><label for="doc-specialty" class="block text-sm font-medium">Specialty</label><input type="text" id="doc-specialty" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></div>
+                    </div>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">Create Doctor</button>
+                </form>
+                <div id="create-doctor-message" class="hidden mt-4 text-center text-sm"></div>
             </div>
         </div>
 
@@ -170,18 +151,17 @@
         const API_URL = 'https://wetreat-22-go-production.up.railway.app'; 
         let currentUser = null;
         let allEMRs = [];
-        let allDoctors = []; // Store fetched doctors
-        let currentEMRId = null; // Store the ID of the EMR being viewed
+        let allDoctors = [];
+        let currentEMRId = null;
 
         // --- View Switching Logic ---
         function showView(viewId, refreshData = false) {
-            const views = ['welcome-view', 'login-view', 'patient-form-view', 'admin-dashboard-view', 'emr-detail-view'];
+            const views = ['welcome-view', 'login-view', 'patient-form-view', 'admin-dashboard-view', 'emr-detail-view', 'manage-doctors-view'];
             views.forEach(id => {
                 document.getElementById(id).classList.add('hidden');
             });
             document.getElementById(viewId).classList.remove('hidden');
 
-            // If returning to the dashboard, refresh the EMR list
             if (viewId === 'admin-dashboard-view' && refreshData) {
                 fetchAndDisplayEMRs();
             }
@@ -189,56 +169,40 @@
 
         // --- Data Fetching ---
         async function fetchAllDoctors() {
-            // In a real app, this would fetch from an API endpoint like `/api/users?role=doctor`
-            // For now, we use the dummy data from the backend.
-            // NOTE: This requires a backend change to be fully dynamic.
-            allDoctors = [
-                { id: 'the_dummy_doctor_id_from_your_db', full_name: 'Dr. John Smith' }
-                // This needs to be updated with a real fetch and a real doctor ID
-            ];
-            console.log("Note: Using hardcoded doctor list for now.", allDoctors);
+            try {
+                const response = await fetch(`${API_URL}/api/doctors`);
+                if (!response.ok) throw new Error('Could not fetch doctors.');
+                allDoctors = await response.json();
+                console.log("Fetched doctors:", allDoctors);
+            } catch (error) {
+                console.error(error);
+                allDoctors = []; // Reset on error
+            }
         }
 
         // --- EMR Detail Logic ---
         function viewEMRDetails(emrId) {
-            currentEMRId = emrId; // Store the current EMR ID
+            currentEMRId = emrId;
             const emr = allEMRs.find(e => e.id === emrId);
             if (!emr) return;
 
             const detailContainer = document.getElementById('emr-detail-content');
             detailContainer.innerHTML = `
-                <div class="border-b pb-4">
-                    <h3 class="text-lg font-semibold text-gray-800">Patient Information</h3>
-                    <p><strong class="font-medium text-gray-600">Name:</strong> ${emr.patient_name || 'N/A'}</p>
-                    <p><strong class="font-medium text-gray-600">Email:</strong> ${emr.patient_email || 'N/A'}</p>
-                    <p><strong class="font-medium text-gray-600">Date of Birth:</strong> ${emr.patient_dob ? new Date(emr.patient_dob).toLocaleDateString() : 'N/A'}</p>
-                </div>
-                <div class="border-b py-4">
-                    <h3 class="text-lg font-semibold text-gray-800">Medical Information</h3>
-                    <p><strong class="font-medium text-gray-600">Symptoms:</strong></p>
-                    <p class="pl-2">${emr.symptoms || 'N/A'}</p>
-                    <p class="mt-2"><strong class="font-medium text-gray-600">Medical History:</strong></p>
-                    <p class="pl-2">${emr.medical_history || 'N/A'}</p>
-                    <p class="mt-2"><strong class="font-medium text-gray-600">Current Medication:</strong></p>
-                    <p class="pl-2">${emr.current_medication || 'N/A'}</p>
-                </div>
+                <div class="border-b pb-4"><h3 class="text-lg font-semibold text-gray-800">Patient Information</h3><p><strong class="font-medium text-gray-600">Name:</strong> ${emr.patient_name||'N/A'}</p><p><strong class="font-medium text-gray-600">Email:</strong> ${emr.patient_email||'N/A'}</p><p><strong class="font-medium text-gray-600">Date of Birth:</strong> ${emr.patient_dob?new Date(emr.patient_dob).toLocaleDateString():'N/A'}</p></div>
+                <div class="border-b py-4"><h3 class="text-lg font-semibold text-gray-800">Medical Information</h3><p><strong class="font-medium text-gray-600">Symptoms:</strong></p><p class="pl-2">${emr.symptoms||'N/A'}</p><p class="mt-2"><strong class="font-medium text-gray-600">Medical History:</strong></p><p class="pl-2">${emr.medical_history||'N/A'}</p><p class="mt-2"><strong class="font-medium text-gray-600">Current Medication:</strong></p><p class="pl-2">${emr.current_medication||'N/A'}</p></div>
             `;
 
-            // Populate Admin Actions form
             const doctorSelect = document.getElementById('assign-doctor');
-            doctorSelect.innerHTML = '<option value="">-- Select a Doctor --</option>'; // Default option
+            doctorSelect.innerHTML = '<option value="">-- Select a Doctor --</option>';
             allDoctors.forEach(doc => {
                 const option = document.createElement('option');
                 option.value = doc.id;
                 option.textContent = doc.full_name;
-                if (emr.assigned_doctor_id === doc.id) {
-                    option.selected = true;
-                }
+                if (emr.assigned_doctor_id === doc.id) option.selected = true;
                 doctorSelect.appendChild(option);
             });
 
             document.getElementById('payment-confirmed').checked = emr.is_payment_confirmed;
-            
             showView('emr-detail-view');
         }
 
@@ -246,69 +210,88 @@
         async function fetchAndDisplayEMRs() {
             const container = document.getElementById('emr-list-container');
             container.innerHTML = '<p id="emr-loading-state">Loading EMRs...</p>';
-            
             try {
                 const response = await fetch(`${API_URL}/api/emrs?userId=${currentUser.id}&userRole=${currentUser.role}`);
                 if (!response.ok) throw new Error('Failed to fetch EMRs.');
                 allEMRs = await response.json();
                 
                 container.innerHTML = '';
-
                 if (allEMRs.length === 0) {
                     container.innerHTML = '<p class="text-gray-500">No EMRs have been submitted yet.</p>';
                     return;
                 }
-
                 allEMRs.forEach(emr => {
                     const card = document.createElement('div');
                     card.className = 'p-4 border rounded-lg bg-gray-50';
-                    card.innerHTML = `
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="font-bold text-lg text-gray-800">${emr.patient_name}</h3>
-                                <p class="text-sm text-gray-600">${emr.patient_email}</p>
-                            </div>
-                            <span class="status-badge status-${emr.status}">${emr.status.replace(/_/g, ' ')}</span>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2">Submitted: ${new Date(emr.created_at).toLocaleString()}</p>
-                        <button onclick="viewEMRDetails('${emr.id}')" class="mt-4 text-sm bg-gray-700 text-white py-2 px-3 rounded-md hover:bg-gray-800">View Details</button>
-                    `;
+                    card.innerHTML = `<div class="flex justify-between items-start"><div><h3 class="font-bold text-lg text-gray-800">${emr.patient_name}</h3><p class="text-sm text-gray-600">${emr.patient_email}</p></div><span class="status-badge status-${emr.status}">${emr.status.replace(/_/g,' ')}</span></div><p class="text-xs text-gray-500 mt-2">Submitted: ${new Date(emr.created_at).toLocaleString()}</p><button onclick="viewEMRDetails('${emr.id}')" class="mt-4 text-sm bg-gray-700 text-white py-2 px-3 rounded-md hover:bg-gray-800">View Details</button>`;
                     container.appendChild(card);
                 });
-
             } catch (error) {
                 container.innerHTML = `<p class="text-red-500">${error.message}</p>`;
             }
         }
         
-        // --- NEW: Admin Update Logic ---
+        // --- Admin Update Logic ---
         document.getElementById('admin-update-form').addEventListener('submit', async function(event) {
             event.preventDefault();
             const messageDiv = document.getElementById('admin-update-message');
             messageDiv.classList.add('hidden');
-
             const updates = {
-                assignedDoctorId: document.getElementById('assign-doctor').value,
+                assignedDoctorId: document.getElementById('assign-doctor').value || null,
                 isPaymentConfirmed: document.getElementById('payment-confirmed').checked,
-                status: document.getElementById('assign-doctor').value ? 'assigned' : 'submitted_by_patient' // Update status if doctor is assigned
+                status: document.getElementById('assign-doctor').value ? 'assigned' : 'submitted_by_patient'
             };
-
             try {
                 const response = await fetch(`${API_URL}/api/emrs/${currentEMRId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ role: 'admin', updates })
                 });
-
                 if (!response.ok) throw new Error('Failed to save changes.');
-
                 messageDiv.textContent = 'Changes saved successfully!';
                 messageDiv.className = 'mt-4 text-center text-sm text-green-600';
-                messageDiv.classList.remove('hidden');
-
             } catch (error) {
                 messageDiv.textContent = error.message;
                 messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+            } finally {
+                messageDiv.classList.remove('hidden');
+            }
+        });
+
+        // --- Create Doctor Logic ---
+        document.getElementById('create-doctor-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const form = event.target;
+            const messageDiv = document.getElementById('create-doctor-message');
+            messageDiv.classList.add('hidden');
+
+            const doctorData = {
+                email: form.elements['doc-email'].value,
+                password: form.elements['doc-password'].value,
+                role: 'doctor',
+                profile: {
+                    fullName: form.elements['doc-name'].value,
+                    specialty: form.elements['doc-specialty'].value,
+                }
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/api/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(doctorData)
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'Failed to create doctor.');
+
+                messageDiv.textContent = 'Doctor created successfully!';
+                messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+                form.reset();
+                await fetchAllDoctors(); // Refresh the global doctor list
+            } catch (error) {
+                messageDiv.textContent = error.message;
+                messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+            } finally {
                 messageDiv.classList.remove('hidden');
             }
         });
@@ -320,20 +303,17 @@
             const passwordInput = document.getElementById('password');
             const errorDiv = document.getElementById('login-error');
             errorDiv.classList.add('hidden');
-
             try {
                 const response = await fetch(`${API_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: emailInput.value, password: passwordInput.value })
                 });
-
                 if (!response.ok) throw new Error('Login failed. Please check your credentials.');
                 const data = await response.json();
                 currentUser = data.user;
-
                 if (currentUser.role === 'admin') {
-                    await fetchAllDoctors(); // Fetch doctors on login
+                    await fetchAllDoctors();
                     showView('admin-dashboard-view');
                     fetchAndDisplayEMRs();
                 } else {
@@ -351,17 +331,11 @@
             const form = event.target;
             const messageDiv = document.getElementById('patient-form-message');
             messageDiv.classList.add('hidden');
-
             const formData = {
-                email: form.elements['email'].value,
-                password: form.elements['password'].value,
-                name: form.elements['name'].value,
-                dob: form.elements['dob'].value,
-                symptoms: form.elements['symptoms'].value,
-                medicalHistory: form.elements['medicalHistory'].value,
+                email: form.elements['email'].value, password: form.elements['password'].value, name: form.elements['name'].value,
+                dob: form.elements['dob'].value, symptoms: form.elements['symptoms'].value, medicalHistory: form.elements['medicalHistory'].value,
                 medication: form.elements['medication'].value,
             };
-
             try {
                 const response = await fetch(`${API_URL}/api/emr/submit`, {
                     method: 'POST',
@@ -370,23 +344,19 @@
                 });
                 const result = await response.json();
                 if (!response.ok) throw new Error(result.message || 'An unknown error occurred.');
-                
                 messageDiv.textContent = result.message;
                 messageDiv.className = 'mt-4 text-center text-sm text-green-600';
-                messageDiv.classList.remove('hidden');
                 form.reset();
             } catch (error) {
                 messageDiv.textContent = error.message;
                 messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+            } finally {
                 messageDiv.classList.remove('hidden');
             }
         });
 
         function logout() {
-            currentUser = null;
-            allEMRs = [];
-            allDoctors = [];
-            currentEMRId = null;
+            currentUser = null; allEMRs = []; allDoctors = []; currentEMRId = null;
             document.getElementById('login-form').reset();
             document.getElementById('emr-list-container').innerHTML = '<p id="emr-loading-state">Loading EMRs...</p>';
             showView('welcome-view');
