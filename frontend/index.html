@@ -130,6 +130,17 @@
                 <p id="emr-loading-state">Loading EMRs...</p>
             </div>
         </div>
+        
+        <!-- NEW: EMR Detail View (Initially Hidden) -->
+        <div id="emr-detail-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Consultation Details</h2>
+                <button onclick="showView('admin-dashboard-view')" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back to Dashboard</button>
+            </div>
+            <div id="emr-detail-content" class="space-y-4">
+                <!-- Details will be populated here by JavaScript -->
+            </div>
+        </div>
 
     </div>
 
@@ -137,34 +148,61 @@
         // --- State Management ---
         const API_URL = 'https://wetreat-22-go-production.up.railway.app'; 
         let currentUser = null;
+        let allEMRs = []; // Store fetched EMRs
 
         // --- View Switching Logic ---
         function showView(viewId) {
-            const views = ['welcome-view', 'login-view', 'patient-form-view', 'admin-dashboard-view'];
+            const views = ['welcome-view', 'login-view', 'patient-form-view', 'admin-dashboard-view', 'emr-detail-view'];
             views.forEach(id => {
                 document.getElementById(id).classList.add('hidden');
             });
             document.getElementById(viewId).classList.remove('hidden');
         }
 
+        // --- EMR Detail Logic ---
+        function viewEMRDetails(emrId) {
+            const emr = allEMRs.find(e => e.id === emrId);
+            if (!emr) return;
+
+            const detailContainer = document.getElementById('emr-detail-content');
+            detailContainer.innerHTML = `
+                <div class="border-b pb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Patient Information</h3>
+                    <p><strong class="font-medium text-gray-600">Name:</strong> ${emr.patient_name}</p>
+                    <p><strong class="font-medium text-gray-600">Email:</strong> ${emr.patient_email}</p>
+                    <p><strong class="font-medium text-gray-600">Date of Birth:</strong> ${new Date(emr.patient_dob).toLocaleDateString()}</p>
+                </div>
+                <div class="border-b py-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Medical Information</h3>
+                    <p><strong class="font-medium text-gray-600">Symptoms:</strong></p>
+                    <p class="pl-2">${emr.symptoms || 'N/A'}</p>
+                    <p class="mt-2"><strong class="font-medium text-gray-600">Medical History:</strong></p>
+                    <p class="pl-2">${emr.medical_history || 'N/A'}</p>
+                    <p class="mt-2"><strong class="font-medium text-gray-600">Current Medication:</strong></p>
+                    <p class="pl-2">${emr.current_medication || 'N/A'}</p>
+                </div>
+            `;
+            showView('emr-detail-view');
+        }
+
         // --- Admin Dashboard Logic ---
         async function fetchAndDisplayEMRs() {
             const container = document.getElementById('emr-list-container');
-            container.innerHTML = '<p id="emr-loading-state">Loading EMRs...</p>'; // Reset to loading state
+            container.innerHTML = '<p id="emr-loading-state">Loading EMRs...</p>';
             
             try {
                 const response = await fetch(`${API_URL}/api/emrs?userId=${currentUser.id}&userRole=${currentUser.role}`);
                 if (!response.ok) throw new Error('Failed to fetch EMRs.');
-                const emrs = await response.json();
+                allEMRs = await response.json(); // Store EMRs globally
                 
-                container.innerHTML = ''; // Clear loading state
+                container.innerHTML = '';
 
-                if (emrs.length === 0) {
+                if (allEMRs.length === 0) {
                     container.innerHTML = '<p class="text-gray-500">No EMRs have been submitted yet.</p>';
                     return;
                 }
 
-                emrs.forEach(emr => {
+                allEMRs.forEach(emr => {
                     const card = document.createElement('div');
                     card.className = 'p-4 border rounded-lg bg-gray-50';
                     card.innerHTML = `
@@ -176,7 +214,7 @@
                             <span class="status-badge status-${emr.status}">${emr.status.replace(/_/g, ' ')}</span>
                         </div>
                         <p class="text-xs text-gray-500 mt-2">Submitted: ${new Date(emr.created_at).toLocaleString()}</p>
-                        <button class="mt-4 text-sm bg-gray-700 text-white py-2 px-3 rounded-md hover:bg-gray-800">View Details</button>
+                        <button onclick="viewEMRDetails('${emr.id}')" class="mt-4 text-sm bg-gray-700 text-white py-2 px-3 rounded-md hover:bg-gray-800">View Details</button>
                     `;
                     container.appendChild(card);
                 });
@@ -202,7 +240,6 @@
                 });
 
                 if (!response.ok) throw new Error('Login failed. Please check your credentials.');
-
                 const data = await response.json();
                 currentUser = data.user;
 
@@ -212,14 +249,13 @@
                 } else {
                     alert('Doctor dashboard is not yet implemented.');
                 }
-
             } catch (error) {
                 errorDiv.textContent = error.message;
                 errorDiv.classList.remove('hidden');
             }
         });
         
-        // --- NEW: Patient Form Submission Logic ---
+        // --- Patient Form Submission Logic ---
         document.getElementById('patient-form').addEventListener('submit', async function(event) {
             event.preventDefault();
             const form = event.target;
@@ -242,18 +278,13 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
                 });
-
                 const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.message || 'An unknown error occurred.');
-                }
+                if (!response.ok) throw new Error(result.message || 'An unknown error occurred.');
                 
                 messageDiv.textContent = result.message;
                 messageDiv.className = 'mt-4 text-center text-sm text-green-600';
                 messageDiv.classList.remove('hidden');
                 form.reset();
-
             } catch (error) {
                 messageDiv.textContent = error.message;
                 messageDiv.className = 'mt-4 text-center text-sm text-red-600';
@@ -263,6 +294,7 @@
 
         function logout() {
             currentUser = null;
+            allEMRs = [];
             document.getElementById('login-form').reset();
             document.getElementById('emr-list-container').innerHTML = '<p id="emr-loading-state">Loading EMRs...</p>';
             showView('welcome-view');
