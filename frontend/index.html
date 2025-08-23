@@ -73,9 +73,51 @@
 
         <!-- Patient Form View (Initially Hidden) -->
         <div id="patient-form-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
-            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">New Consultation Request</h2>
-            <p class="text-center">Patient form will be added in a future step.</p>
-            <button onclick="showView('welcome-view')" class="mt-6 w-full text-center text-blue-600 hover:underline">&larr; Back to Welcome</button>
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">New Consultation Request</h2>
+            <p class="text-center text-gray-600 mb-6">Fill out the form below to submit your medical information for review.</p>
+            <form id="patient-form" class="space-y-4">
+                <h3 class="text-lg font-semibold text-gray-700 border-b pb-2">Account Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="patient-email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input type="email" id="patient-email" name="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label for="patient-password" class="block text-sm font-medium text-gray-700">Choose a Password</label>
+                        <input type="password" id="patient-password" name="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 pt-4">Personal & Medical Details</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="patient-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input type="text" id="patient-name" name="name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label for="patient-dob" class="block text-sm font-medium text-gray-700">Date of Birth</label>
+                        <input type="date" id="patient-dob" name="dob" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+                    </div>
+                </div>
+                <div>
+                    <label for="patient-symptoms" class="block text-sm font-medium text-gray-700">Symptoms</label>
+                    <textarea id="patient-symptoms" name="symptoms" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+                </div>
+                <div>
+                    <label for="patient-history" class="block text-sm font-medium text-gray-700">Medical History</label>
+                    <textarea id="patient-history" name="medicalHistory" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+                </div>
+                 <div>
+                    <label for="patient-medication" class="block text-sm font-medium text-gray-700">Current Medication</label>
+                    <textarea id="patient-medication" name="medication" rows="2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+                </div>
+                
+                <button type="submit" class="w-full flex justify-center py-3 px-4 mt-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                    Submit for Review
+                </button>
+            </form>
+            <div id="patient-form-message" class="hidden mt-4 text-center text-sm"></div>
+            <button onclick="showView('welcome-view')" class="mt-6 w-full text-center text-blue-600 hover:underline text-sm">&larr; Back to Welcome</button>
         </div>
 
         <!-- Admin Dashboard View (Initially Hidden) -->
@@ -84,9 +126,7 @@
                 <h2 class="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
                 <button onclick="logout()" class="text-sm font-semibold text-red-600 hover:text-red-800">Logout</button>
             </div>
-            <!-- EMR list will be injected here by JavaScript -->
             <div id="emr-list-container" class="space-y-4">
-                <!-- Loading state -->
                 <p id="emr-loading-state">Loading EMRs...</p>
             </div>
         </div>
@@ -107,27 +147,23 @@
             document.getElementById(viewId).classList.remove('hidden');
         }
 
-        // --- NEW: Admin Dashboard Logic ---
+        // --- Admin Dashboard Logic ---
         async function fetchAndDisplayEMRs() {
             const container = document.getElementById('emr-list-container');
-            const loadingState = document.getElementById('emr-loading-state');
+            container.innerHTML = '<p id="emr-loading-state">Loading EMRs...</p>'; // Reset to loading state
             
             try {
                 const response = await fetch(`${API_URL}/api/emrs?userId=${currentUser.id}&userRole=${currentUser.role}`);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch EMRs.');
-                }
+                if (!response.ok) throw new Error('Failed to fetch EMRs.');
                 const emrs = await response.json();
                 
-                // Clear loading state
-                container.innerHTML = '';
+                container.innerHTML = ''; // Clear loading state
 
                 if (emrs.length === 0) {
                     container.innerHTML = '<p class="text-gray-500">No EMRs have been submitted yet.</p>';
                     return;
                 }
 
-                // Create and append a card for each EMR
                 emrs.forEach(emr => {
                     const card = document.createElement('div');
                     card.className = 'p-4 border rounded-lg bg-gray-50';
@@ -165,17 +201,14 @@
                     body: JSON.stringify({ email: emailInput.value, password: passwordInput.value })
                 });
 
-                if (!response.ok) {
-                    throw new Error('Login failed. Please check your credentials.');
-                }
+                if (!response.ok) throw new Error('Login failed. Please check your credentials.');
 
                 const data = await response.json();
                 currentUser = data.user;
-                console.log('Login successful:', currentUser);
 
                 if (currentUser.role === 'admin') {
                     showView('admin-dashboard-view');
-                    fetchAndDisplayEMRs(); // Fetch data right after showing the view
+                    fetchAndDisplayEMRs();
                 } else {
                     alert('Doctor dashboard is not yet implemented.');
                 }
@@ -185,11 +218,52 @@
                 errorDiv.classList.remove('hidden');
             }
         });
+        
+        // --- NEW: Patient Form Submission Logic ---
+        document.getElementById('patient-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const form = event.target;
+            const messageDiv = document.getElementById('patient-form-message');
+            messageDiv.classList.add('hidden');
+
+            const formData = {
+                email: form.elements['email'].value,
+                password: form.elements['password'].value,
+                name: form.elements['name'].value,
+                dob: form.elements['dob'].value,
+                symptoms: form.elements['symptoms'].value,
+                medicalHistory: form.elements['medicalHistory'].value,
+                medication: form.elements['medication'].value,
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/api/emr/submit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'An unknown error occurred.');
+                }
+                
+                messageDiv.textContent = result.message;
+                messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+                messageDiv.classList.remove('hidden');
+                form.reset();
+
+            } catch (error) {
+                messageDiv.textContent = error.message;
+                messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+                messageDiv.classList.remove('hidden');
+            }
+        });
 
         function logout() {
             currentUser = null;
             document.getElementById('login-form').reset();
-            // Clear the EMR list before logging out
             document.getElementById('emr-list-container').innerHTML = '<p id="emr-loading-state">Loading EMRs...</p>';
             showView('welcome-view');
         }
