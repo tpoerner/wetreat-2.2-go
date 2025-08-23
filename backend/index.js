@@ -1,14 +1,13 @@
 // backend/index.js
 // This Node.js Express application serves as the backend for the medical consultation platform.
-// It is now configured to use a persistent PostgreSQL database.
+// It has been updated to use a new, more efficient PostgreSQL schema that aligns with the MVP workflow.
+// VERSION 3: Implemented a database connection pool to prevent freezing under load.
 
 const express = require('express');
 const cors = require('cors');
-const { Client } = require('pg');
+const { Pool } = require('pg'); // Use Pool instead of Client
 const { v4: uuidv4 } = require('uuid');
 const PDFDocument = require('pdfkit');
-const fs = require('fs');
-const path = require('path');
 
 // Initialize Express app
 const app = express();
@@ -19,150 +18,158 @@ app.use(cors()); // Enables Cross-Origin Resource Sharing
 app.use(express.json()); // Parses incoming JSON payloads
 
 // --- Database Setup ---
-// Get the database connection URL from Railway's environment variables
-const client = new Client({
+// Use a connection pool to handle multiple concurrent database requests efficiently.
+const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
         rejectUnauthorized: false
     }
 });
 
-// Connect to the database and create tables
+// Connect to the database and create tables if they don't exist
 async function setupDatabase() {
     try {
-        await client.connect();
+        // Test the connection with a simple query. The pool manages individual connections.
+        await pool.query('SELECT NOW()');
         console.log("Connected to PostgreSQL database successfully.");
         
-        console.log("Setting up database tables...");
+        console.log("Setting up database tables based on MVP schema...");
         
-        // Users table for authentication
-        await client.query(`
+        // Users table for Admins and Doctors
+        await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
-                id TEXT PRIMARY KEY,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                role TEXT NOT NULL
-            );
-        `);
-        
-        // Patients table to store patient demographic and medical information
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS patients (
-                id TEXT PRIMARY KEY,
-                fullName TEXT NOT NULL,
+                id UUID PRIMARY KEY,
                 email TEXT UNIQUE NOT NULL,
-                dob TEXT,
-                symptoms TEXT,
-                medicalHistory TEXT,
-                medication TEXT,
-                documents TEXT,
-                notes TEXT,
-                timestamp TEXT NOT NULL
+                password TEXT NOT NULL, -- NOTE: In production, always hash passwords!
+                role TEXT NOT NULL CHECK (role IN ('admin', 'doctor')),
+                created_at TIMESTAMPTZ DEFAULT NOW()
             );
         `);
         
-        // Consultations table to store physician's consultation details
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS consultations (
-                consultationId TEXT PRIMARY KEY,
-                patientId TEXT NOT NULL,
-                physicianId TEXT NOT NULL,
-                physicianName TEXT,
-                physicianEmail TEXT,
-                timestamp TEXT NOT NULL,
-                status TEXT NOT NULL,
-                consultationDescription TEXT,
-                findings TEXT,
-                recommendations TEXT,
-                physicianNotes TEXT,
-                FOREIGN KEY(patientId) REFERENCES patients(id)
+        // Doctor profiles table with detailed information
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS doctor_profiles (
+                id UUID PRIMARY KEY,
+                user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                full_name TEXT NOT NULL,
+                specialty TEXT,
+                years_experience INT,
+                expertise_area TEXT,
+                current_workplace TEXT,
+                linkedin_url TEXT,
+                consultation_fee NUMERIC(10, 2)
             );
         `);
 
-        // Messages table for in-platform communication between users
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS messages (
-                messageId TEXT PRIMARY KEY,
-                senderId TEXT NOT NULL,
-                receiverId TEXT NOT NULL,
-                timestamp TEXT NOT NULL,
-                content TEXT NOT NULL,
-                FOREIGN KEY(senderId) REFERENCES users(id),
-                FOREIGN KEY(receiverId) REFERENCES users(id)
+        // The central EMRs table for the entire consultation workflow
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS emrs (
+                id UUID PRIMARY KEY,
+                
+                -- Patient Info & Section #1
+                patient_email TEXT NOT NULL,
+                patient_password TEXT NOT NULL, -- For the patient's single submission session
+                patient_name TEXT,
+                patient_dob DATE,
+                symptoms TEXT,
+                medical_history TEXT,
+                current_medication TEXT,
+                document_links JSONB,
+                patient_notes TEXT,
+
+                -- Doctor Info & Section #2
+                assigned_doctor_id UUID REFERENCES users(id),
+                doctor_report TEXT,
+                doctor_recommendations TEXT,
+                doctor_private_notes TEXT,
+
+                -- Admin Info & Section #3
+                admin_notes TEXT,
+                is_payment_confirmed BOOLEAN DEFAULT FALSE,
+                patient_feedback TEXT,
+
+                -- Status & Timestamps
+                status TEXT NOT NULL DEFAULT 'submitted_by_patient',
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
             );
         `);
-        
+
+        console.log("Tables created or already exist.");
+
         // Seed initial admin user if not exists
-        const adminCheck = await client.query(`SELECT id FROM users WHERE username = $1`, ['admin']);
+        const adminCheck = await pool.query(`SELECT id FROM users WHERE email = $1`, ['admin@wetreat.com']);
         if (adminCheck.rows.length === 0) {
             const adminId = uuidv4();
-            await client.query(`INSERT INTO users (id, username, password, role) VALUES ($1, $2, $3, $4)`, [adminId, 'admin', 'Gr0711-#', 'administrator']);
+            // IMPORTANT: In a real app, hash this password.
+            await pool.query(`INSERT INTO users (id, email, password, role) VALUES ($1, $2, $3, $4)`, [adminId, 'admin@wetreat.com', 'adminpass', 'admin']);
             console.log('Initial administrator user created.');
         }
 
-        // Seed a few dummy doctor and patient records for demonstration
-        const doctorCheck = await client.query(`SELECT id FROM users WHERE username = $1`, ['dr.smith']);
+        // Seed a dummy doctor user and profile for demonstration
+        const doctorCheck = await pool.query(`SELECT id FROM users WHERE email = $1`, ['dr.smith@wetreat.com']);
         if (doctorCheck.rows.length === 0) {
             const doctorId = uuidv4();
-            await client.query(`INSERT INTO users (id, username, password, role) VALUES ($1, $2, $3, $4)`, [doctorId, 'dr.smith', 'password123', 'doctor']);
-            console.log('Dummy doctor created.');
-        }
-        
-        const patientCheck = await client.query(`SELECT id FROM patients WHERE email = $1`, ['johndoe@example.com']);
-        if (patientCheck.rows.length === 0) {
-            const patientId = uuidv4();
-            await client.query(`INSERT INTO patients (id, fullName, email, dob, symptoms, medicalHistory, medication, documents, notes, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`, [
-                patientId,
-                'John Doe',
-                'johndoe@example.com',
-                '1980-01-01',
-                'Chest pain, shortness of breath',
-                'Hypertension, high cholesterol',
-                'Lisinopril',
-                JSON.stringify([{ url: 'https://example.com/ecg.jpg', description: 'ECG' }]),
-                'Patient is concerned about recent episodes.',
-                new Date().toISOString()
-            ]);
+            await pool.query(`INSERT INTO users (id, email, password, role) VALUES ($1, $2, $3, $4)`, [doctorId, 'dr.smith@wetreat.com', 'doctorpass', 'doctor']);
             
-            const consultationId = uuidv4();
-            const doctorId = (await client.query(`SELECT id FROM users WHERE username = 'dr.smith'`)).rows[0].id;
-            await client.query(`INSERT INTO consultations (consultationId, patientId, physicianId, physicianName, physicianEmail, timestamp, status, consultationDescription, findings, recommendations, physicianNotes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`, [
-                consultationId,
-                patientId,
-                doctorId,
-                'dr.smith',
-                'dr.smith@example.com',
-                new Date().toISOString(),
-                'open',
-                JSON.stringify({ type: 'online', onlineType: 'video', blinded: false }),
-                'Patient presents with typical symptoms of angina.',
-                'Prescribe nitrates, recommend lifestyle changes.',
-                'Needs a follow-up in 2 weeks.'
-            ]);
-            console.log('Dummy patient and consultation records created.');
+            const profileId = uuidv4();
+            await pool.query(`
+                INSERT INTO doctor_profiles (id, user_id, full_name, specialty, years_experience, consultation_fee) 
+                VALUES ($1, $2, $3, $4, $5, $6)`,
+                [profileId, doctorId, 'Dr. John Smith', 'Cardiology', 15, 250.00]
+            );
+            console.log('Dummy doctor and profile created.');
         }
 
     } catch (err) {
         console.error('Database connection or setup error', err);
-        // Exit the process if the database setup fails. Railway will restart it.
-        process.exit(1);
+        process.exit(1); // Exit if DB setup fails
     }
 }
 
 // --- API Endpoints ---
 
-// Login endpoint
-app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
-    
+// === Authentication ===
+
+// Patient "registers" by submitting their EMR. This is their one-time sign-up.
+app.post('/api/emr/submit', async (req, res) => {
+    const { email, password, name, dob, symptoms, medicalHistory, medication, documents, notes } = req.body;
+
+    if (!email || !password || !name) {
+        return res.status(400).json({ message: 'Email, password, and name are required.' });
+    }
+
     try {
-        const result = await client.query(`SELECT * FROM users WHERE username = $1 AND password = $2`, [username, password]);
+        const emrId = uuidv4();
+        await pool.query(`
+            INSERT INTO emrs (id, patient_email, patient_password, patient_name, patient_dob, symptoms, medical_history, current_medication, document_links, patient_notes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `, [emrId, email, password, name, dob, symptoms, medicalHistory, medication, JSON.stringify(documents), notes]);
+        
+        res.status(201).json({ message: 'EMR submitted successfully. An admin will contact you shortly.', emrId });
+    } catch (error) {
+        console.error('Error submitting EMR:', error);
+        res.status(500).json({ message: 'Failed to submit EMR', error: error.message });
+    }
+});
+
+// Login for Admins and Doctors
+app.post('/api/auth/login', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const result = await pool.query(`SELECT * FROM users WHERE email = $1 AND password = $2`, [email, password]);
         const user = result.rows[0];
         
         if (user) {
-            res.json({ message: 'Login successful', user: { id: user.id, username: user.username, role: user.role } });
+            // For doctors, fetch their profile as well
+            let profile = null;
+            if (user.role === 'doctor') {
+                const profileResult = await pool.query(`SELECT * FROM doctor_profiles WHERE user_id = $1`, [user.id]);
+                profile = profileResult.rows[0];
+            }
+            res.json({ message: 'Login successful', user: { id: user.id, email: user.email, role: user.role }, profile });
         } else {
-            res.status(401).json({ message: 'Invalid username or password' });
+            res.status(401).json({ message: 'Invalid email or password' });
         }
     } catch (error) {
         console.error('Login error:', error);
@@ -170,13 +177,26 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// Create new user (Admin only)
-app.post('/api/create-user', async (req, res) => {
-    const { username, password, role } = req.body;
+
+// === User Management (Admin Only) ===
+
+// Create new user (doctor or admin) and doctor profile if applicable
+app.post('/api/users', async (req, res) => {
+    // This should be a protected route, checking if the requester is an admin
+    const { email, password, role, profile } = req.body;
     
     try {
         const userId = uuidv4();
-        await client.query(`INSERT INTO users (id, username, password, role) VALUES ($1, $2, $3, $4)`, [userId, username, password, role]);
+        await pool.query(`INSERT INTO users (id, email, password, role) VALUES ($1, $2, $3, $4)`, [userId, email, password, role]);
+        
+        if (role === 'doctor' && profile) {
+            const profileId = uuidv4();
+            await pool.query(`
+                INSERT INTO doctor_profiles (id, user_id, full_name, specialty, years_experience, expertise_area, current_workplace, linkedin_url, consultation_fee)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                [profileId, userId, profile.fullName, profile.specialty, profile.yearsExperience, profile.expertiseArea, profile.currentWorkplace, profile.linkedinUrl, profile.consultationFee]
+            );
+        }
         res.status(201).json({ message: 'User created successfully', userId });
     } catch (error) {
         console.error('Error creating user:', error);
@@ -184,155 +204,120 @@ app.post('/api/create-user', async (req, res) => {
     }
 });
 
-// Submit patient record
-app.post('/api/submit-patient-record', async (req, res) => {
-    const patientData = req.body;
-    
-    try {
-        const patientId = uuidv4();
-        await client.query(`INSERT INTO patients (id, fullName, email, dob, symptoms, medicalHistory, medication, documents, notes, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`, [
-            patientId,
-            patientData.fullName,
-            patientData.email,
-            patientData.dob,
-            patientData.symptoms,
-            patientData.medicalHistory,
-            patientData.medication,
-            JSON.stringify(patientData.documents),
-            patientData.notes,
-            new Date().toISOString()
-        ]);
-        res.status(201).json({ message: 'Patient record submitted successfully', patientId });
-    } catch (error) {
-        console.error('Error submitting patient record:', error);
-        res.status(500).json({ message: 'Failed to submit patient record', error: error.message });
-    }
-});
+// === EMR Management ===
 
-// Save/Update consultation
-app.post('/api/save-consultation', async (req, res) => {
-    const { consultationId, patientId, physicianId, physicianName, physicianEmail, status, consultationDescription, findings, recommendations, physicianNotes } = req.body;
-    
+// Get EMRs (all for admin, assigned for doctor)
+app.get('/api/emrs', async (req, res) => {
+    // In a real app, you'd get userId and role from a decoded JWT token
+    const { userId, userRole } = req.query; 
+
     try {
-        if (consultationId) {
-            // Update existing consultation
-            await client.query(`UPDATE consultations SET status = $1, consultationDescription = $2, findings = $3, recommendations = $4, physicianNotes = $5 WHERE consultationId = $6`, [status, JSON.stringify(consultationDescription), findings, recommendations, physicianNotes, consultationId]);
-            res.status(200).json({ message: 'Consultation updated successfully' });
+        let result;
+        if (userRole === 'admin') {
+            result = await pool.query('SELECT * FROM emrs ORDER BY created_at DESC');
+        } else if (userRole === 'doctor') {
+            result = await pool.query('SELECT * FROM emrs WHERE assigned_doctor_id = $1 ORDER BY created_at DESC', [userId]);
         } else {
-            // Create a new consultation
-            const newConsultationId = uuidv4();
-            await client.query(`INSERT INTO consultations (consultationId, patientId, physicianId, physicianName, physicianEmail, timestamp, status, consultationDescription, findings, recommendations, physicianNotes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`, [
-                newConsultationId,
-                patientId,
-                physicianId,
-                physicianName,
-                physicianEmail,
-                new Date().toISOString(),
-                status,
-                JSON.stringify(consultationDescription),
-                findings,
-                recommendations,
-                physicianNotes
-            ]);
-            res.status(201).json({ message: 'Consultation created successfully', consultationId: newConsultationId });
+            return res.status(403).json({ message: 'Forbidden' });
         }
-    } catch (error) {
-        console.error('Error saving consultation:', error);
-        res.status(500).json({ message: 'Failed to save consultation', error: error.message });
-    }
-});
-
-// Get a single consultation by ID
-app.get('/api/consultation/:id', async (req, res) => {
-    const { id } = req.params;
-    
-    try {
-        const result = await client.query(`SELECT * FROM consultations WHERE consultationId = $1`, [id]);
-        const consultation = result.rows[0];
-        
-        if (consultation) {
-            res.json(consultation);
-        } else {
-            res.status(404).json({ message: 'Consultation not found' });
-        }
-    } catch (error) {
-        console.error('Error fetching consultation:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
-});
-
-// Get all consultations for a physician
-app.get('/api/consultations/doctor/:id', async (req, res) => {
-    const { id } = req.params;
-    
-    try {
-        const result = await client.query(`SELECT * FROM consultations WHERE physicianId = $1`, [id]);
         res.json(result.rows);
     } catch (error) {
-        console.error('Error fetching consultations:', error);
+        console.error('Error fetching EMRs:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });
 
-// Generate PDF Report
-app.get('/api/generate-pdf/:id', async (req, res) => {
+// Update an EMR (used by both Admin and Doctor for their respective sections)
+app.put('/api/emrs/:id', async (req, res) => {
+    const { id } = req.params;
+    const { role, updates } = req.body; // role of the user making the update
+
+    try {
+        let query;
+        let queryParams;
+
+        if (role === 'admin') {
+            query = `UPDATE emrs SET assigned_doctor_id = $1, is_payment_confirmed = $2, admin_notes = $3, status = $4, updated_at = NOW() WHERE id = $5`;
+            queryParams = [updates.assignedDoctorId, updates.isPaymentConfirmed, updates.adminNotes, updates.status, id];
+        } else if (role === 'doctor') {
+            query = `UPDATE emrs SET doctor_report = $1, doctor_recommendations = $2, doctor_private_notes = $3, status = $4, updated_at = NOW() WHERE id = $5`;
+            queryParams = [updates.doctorReport, updates.doctorRecommendations, updates.doctorPrivateNotes, updates.status, id];
+        } else {
+            return res.status(403).json({ message: 'Invalid role for update.' });
+        }
+
+        await pool.query(query, queryParams);
+        res.status(200).json({ message: 'EMR updated successfully' });
+    } catch (error) {
+        console.error('Error updating EMR:', error);
+        res.status(500).json({ message: 'Failed to update EMR', error: error.message });
+    }
+});
+
+
+// === PDF Generation ===
+
+app.get('/api/emrs/:id/generate-pdf', async (req, res) => {
     const { id } = req.params;
     
     try {
-        const consultationResult = await client.query(`SELECT * FROM consultations WHERE consultationId = $1`, [id]);
-        const consultation = consultationResult.rows[0];
-        if (!consultation) {
-            return res.status(404).json({ message: 'Consultation not found.' });
+        const emrResult = await pool.query(`
+            SELECT e.*, dp.full_name as doctor_name 
+            FROM emrs e
+            LEFT JOIN doctor_profiles dp ON e.assigned_doctor_id = dp.user_id
+            WHERE e.id = $1
+        `, [id]);
+
+        const emr = emrResult.rows[0];
+        if (!emr) {
+            return res.status(404).json({ message: 'EMR not found.' });
         }
 
-        const patientResult = await client.query(`SELECT * FROM patients WHERE id = $1`, [consultation.patientId]);
-        const patient = patientResult.rows[0];
-        if (!patient) {
-            return res.status(404).json({ message: 'Patient record not found.' });
+        // Check if payment is confirmed before allowing PDF generation
+        if (!emr.is_payment_confirmed) {
+            return res.status(403).json({ message: 'Payment not confirmed. PDF cannot be generated.' });
         }
 
-        const doc = new PDFDocument();
+        const doc = new PDFDocument({ margin: 50 });
         
-        // Set the response headers for PDF download
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename="Consultation_Report_${id}.pdf"`);
+        res.setHeader('Content-Disposition', `attachment; filename="Consultation_Report_${emr.id}.pdf"`);
         
         doc.pipe(res);
 
-        // Add content to the PDF
-        doc.fontSize(16).text('Medical Consultation Report', { align: 'center' }).moveDown(0.5);
-        doc.fontSize(12).text(`Report for: ${patient.fullName}`).moveDown(0.2);
-        doc.text(`Consultation ID: ${consultation.consultationId}`).moveDown(0.2);
-        doc.text(`Physician: ${consultation.physicianName}`).moveDown(0.2);
-        doc.text(`Timestamp: ${new Date(consultation.timestamp).toLocaleString()}`).moveDown(1);
+        // --- PDF Content ---
+        doc.fontSize(18).text('Medical Consultation Report', { align: 'center' }).moveDown(1);
         
-        // Consultation Description
-        doc.fontSize(14).text('1. Consultation Description').moveDown(0.5);
-        const desc = JSON.parse(consultation.consultationDescription);
-        doc.fontSize(10).text(`Type: ${desc.type}`).moveDown(0.2);
-        if (desc.onlineType) {
-            doc.text(`Online Type: ${desc.onlineType}`).moveDown(0.2);
-        }
-        doc.text(`Blinded: ${desc.blinded ? 'Yes' : 'No'}`).moveDown(1);
+        doc.fontSize(12).text(`Patient Name: ${emr.patient_name}`);
+        doc.text(`Date of Birth: ${new Date(emr.patient_dob).toLocaleDateString()}`);
+        doc.text(`Consultation Date: ${new Date(emr.created_at).toLocaleDateString()}`);
+        doc.text(`Consulting Physician: ${emr.doctor_name || 'N/A'}`).moveDown(1.5);
 
-        // Findings
-        doc.fontSize(14).text('2. Findings').moveDown(0.5);
-        doc.fontSize(10).text(consultation.findings || 'N/A').moveDown(1);
+        // Section 1: Patient-Provided Information
+        doc.fontSize(14).text('Patient-Provided Information', { underline: true }).moveDown(0.5);
+        doc.fontSize(11).text('Symptoms:', { continued: true }).font('Helvetica-Bold').text(emr.symptoms || 'N/A').font('Helvetica');
+        doc.moveDown(0.5);
+        doc.text('Medical History:', { continued: true }).font('Helvetica-Bold').text(emr.medical_history || 'N/A').font('Helvetica');
+        doc.moveDown(1.5);
 
-        // Recommendations
-        doc.fontSize(14).text('3. Recommendations').moveDown(0.5);
-        doc.fontSize(10).text(consultation.recommendations || 'N/A').moveDown(1);
+        // Section 2: Physician's Report
+        doc.fontSize(14).text("Physician's Report", { underline: true }).moveDown(0.5);
+        doc.fontSize(12).text('Consultation Report & Findings').moveDown(0.2);
+        doc.fontSize(11).text(emr.doctor_report || 'Pending report...').moveDown(1);
+        
+        doc.fontSize(12).text('Recommendations').moveDown(0.2);
+        doc.fontSize(11).text(emr.doctor_recommendations || 'Pending recommendations...').moveDown(2);
 
-        // Physician's Notes
-        doc.fontSize(14).text('4. Physician\'s Notes').moveDown(0.5);
-        doc.fontSize(10).text(consultation.physicianNotes || 'N/A').moveDown(1);
+        doc.fontSize(10).text('--- End of Report ---', { align: 'center' });
         
         doc.end();
+
     } catch (error) {
         console.error('PDF generation error:', error);
         res.status(500).json({ message: 'Server error generating PDF.' });
     }
 });
+
 
 // Start the server only after the database setup is complete
 async function startServer() {
