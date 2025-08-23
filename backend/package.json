@@ -1,16 +1,22 @@
 {
-  "name": "medical-platform-backend",
+  "name": "medical-backend",
   "version": "1.0.0",
-  "description": "Backend for the medical consultation platform",
+  "description": "Backend for the medical consultation platform.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "pg": "^8.12.0",
-    "pdfkit": "^0.15.0",
-    "uuid": "^10.0.0"
+    "express": "^4.18.2",
+    "pdfkit": "^0.13.0",
+    "pg": "^8.11.3",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
