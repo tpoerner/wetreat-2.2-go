@@ -131,14 +131,35 @@
             </div>
         </div>
         
-        <!-- NEW: EMR Detail View (Initially Hidden) -->
+        <!-- EMR Detail View (Initially Hidden) -->
         <div id="emr-detail-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">Consultation Details</h2>
-                <button onclick="showView('admin-dashboard-view')" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back to Dashboard</button>
+                <button onclick="showView('admin-dashboard-view', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back to Dashboard</button>
             </div>
             <div id="emr-detail-content" class="space-y-4">
-                <!-- Details will be populated here by JavaScript -->
+                <!-- Details will be populated here -->
+            </div>
+            
+            <!-- NEW: Admin Actions Section -->
+            <div id="admin-actions-section" class="mt-6 pt-6 border-t">
+                <h3 class="text-lg font-semibold text-gray-700">Admin Actions</h3>
+                <form id="admin-update-form" class="space-y-4 mt-4">
+                    <div>
+                        <label for="assign-doctor" class="block text-sm font-medium text-gray-700">Assign Doctor</label>
+                        <select id="assign-doctor" name="assignedDoctorId" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <!-- Doctor options will be populated here -->
+                        </select>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="payment-confirmed" name="isPaymentConfirmed" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="payment-confirmed" class="ml-2 block text-sm text-gray-900">Payment Confirmed</label>
+                    </div>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                        Save Changes
+                    </button>
+                </form>
+                <div id="admin-update-message" class="hidden mt-4 text-center text-sm"></div>
             </div>
         </div>
 
@@ -148,19 +169,39 @@
         // --- State Management ---
         const API_URL = 'https://wetreat-22-go-production.up.railway.app'; 
         let currentUser = null;
-        let allEMRs = []; // Store fetched EMRs
+        let allEMRs = [];
+        let allDoctors = []; // Store fetched doctors
+        let currentEMRId = null; // Store the ID of the EMR being viewed
 
         // --- View Switching Logic ---
-        function showView(viewId) {
+        function showView(viewId, refreshData = false) {
             const views = ['welcome-view', 'login-view', 'patient-form-view', 'admin-dashboard-view', 'emr-detail-view'];
             views.forEach(id => {
                 document.getElementById(id).classList.add('hidden');
             });
             document.getElementById(viewId).classList.remove('hidden');
+
+            // If returning to the dashboard, refresh the EMR list
+            if (viewId === 'admin-dashboard-view' && refreshData) {
+                fetchAndDisplayEMRs();
+            }
+        }
+
+        // --- Data Fetching ---
+        async function fetchAllDoctors() {
+            // In a real app, this would fetch from an API endpoint like `/api/users?role=doctor`
+            // For now, we use the dummy data from the backend.
+            // NOTE: This requires a backend change to be fully dynamic.
+            allDoctors = [
+                { id: 'the_dummy_doctor_id_from_your_db', full_name: 'Dr. John Smith' }
+                // This needs to be updated with a real fetch and a real doctor ID
+            ];
+            console.log("Note: Using hardcoded doctor list for now.", allDoctors);
         }
 
         // --- EMR Detail Logic ---
         function viewEMRDetails(emrId) {
+            currentEMRId = emrId; // Store the current EMR ID
             const emr = allEMRs.find(e => e.id === emrId);
             if (!emr) return;
 
@@ -168,9 +209,9 @@
             detailContainer.innerHTML = `
                 <div class="border-b pb-4">
                     <h3 class="text-lg font-semibold text-gray-800">Patient Information</h3>
-                    <p><strong class="font-medium text-gray-600">Name:</strong> ${emr.patient_name}</p>
-                    <p><strong class="font-medium text-gray-600">Email:</strong> ${emr.patient_email}</p>
-                    <p><strong class="font-medium text-gray-600">Date of Birth:</strong> ${new Date(emr.patient_dob).toLocaleDateString()}</p>
+                    <p><strong class="font-medium text-gray-600">Name:</strong> ${emr.patient_name || 'N/A'}</p>
+                    <p><strong class="font-medium text-gray-600">Email:</strong> ${emr.patient_email || 'N/A'}</p>
+                    <p><strong class="font-medium text-gray-600">Date of Birth:</strong> ${emr.patient_dob ? new Date(emr.patient_dob).toLocaleDateString() : 'N/A'}</p>
                 </div>
                 <div class="border-b py-4">
                     <h3 class="text-lg font-semibold text-gray-800">Medical Information</h3>
@@ -182,6 +223,22 @@
                     <p class="pl-2">${emr.current_medication || 'N/A'}</p>
                 </div>
             `;
+
+            // Populate Admin Actions form
+            const doctorSelect = document.getElementById('assign-doctor');
+            doctorSelect.innerHTML = '<option value="">-- Select a Doctor --</option>'; // Default option
+            allDoctors.forEach(doc => {
+                const option = document.createElement('option');
+                option.value = doc.id;
+                option.textContent = doc.full_name;
+                if (emr.assigned_doctor_id === doc.id) {
+                    option.selected = true;
+                }
+                doctorSelect.appendChild(option);
+            });
+
+            document.getElementById('payment-confirmed').checked = emr.is_payment_confirmed;
+            
             showView('emr-detail-view');
         }
 
@@ -193,7 +250,7 @@
             try {
                 const response = await fetch(`${API_URL}/api/emrs?userId=${currentUser.id}&userRole=${currentUser.role}`);
                 if (!response.ok) throw new Error('Failed to fetch EMRs.');
-                allEMRs = await response.json(); // Store EMRs globally
+                allEMRs = await response.json();
                 
                 container.innerHTML = '';
 
@@ -223,6 +280,38 @@
                 container.innerHTML = `<p class="text-red-500">${error.message}</p>`;
             }
         }
+        
+        // --- NEW: Admin Update Logic ---
+        document.getElementById('admin-update-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const messageDiv = document.getElementById('admin-update-message');
+            messageDiv.classList.add('hidden');
+
+            const updates = {
+                assignedDoctorId: document.getElementById('assign-doctor').value,
+                isPaymentConfirmed: document.getElementById('payment-confirmed').checked,
+                status: document.getElementById('assign-doctor').value ? 'assigned' : 'submitted_by_patient' // Update status if doctor is assigned
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/api/emrs/${currentEMRId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: 'admin', updates })
+                });
+
+                if (!response.ok) throw new Error('Failed to save changes.');
+
+                messageDiv.textContent = 'Changes saved successfully!';
+                messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+                messageDiv.classList.remove('hidden');
+
+            } catch (error) {
+                messageDiv.textContent = error.message;
+                messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+                messageDiv.classList.remove('hidden');
+            }
+        });
 
         // --- Authentication Logic ---
         document.getElementById('login-form').addEventListener('submit', async function(event) {
@@ -244,6 +333,7 @@
                 currentUser = data.user;
 
                 if (currentUser.role === 'admin') {
+                    await fetchAllDoctors(); // Fetch doctors on login
                     showView('admin-dashboard-view');
                     fetchAndDisplayEMRs();
                 } else {
@@ -295,6 +385,8 @@
         function logout() {
             currentUser = null;
             allEMRs = [];
+            allDoctors = [];
+            currentEMRId = null;
             document.getElementById('login-form').reset();
             document.getElementById('emr-list-container').innerHTML = '<p id="emr-loading-state">Loading EMRs...</p>';
             showView('welcome-view');
