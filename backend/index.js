@@ -1,6 +1,6 @@
 // backend/index.js
 // This Node.js Express application serves as the backend for the medical consultation platform.
-// This version corrects the code order to ensure the server starts after all routes are defined.
+// This version adds a dedicated endpoint to fetch all doctor profiles.
 
 const express = require('express');
 const cors = require('cors');
@@ -13,7 +13,6 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // 2. Configure CORS
-// The URL of your live Netlify frontend should be set as an environment variable in Railway.
 const allowedOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
 const corsOptions = {
   origin: allowedOrigin
@@ -21,7 +20,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // 3. Use Middleware
-app.use(express.json()); // Parses incoming JSON payloads
+app.use(express.json());
 
 // --- Database Setup ---
 const pool = new Pool({
@@ -36,16 +35,7 @@ async function setupDatabase() {
         await pool.query('SELECT NOW()');
         console.log("Connected to PostgreSQL database successfully.");
         
-        console.log("Setting up database tables based on MVP schema...");
-
-        // --- DEVELOPMENT ONLY: Drop existing tables to ensure a clean slate ---
-       // console.log("Dropping existing tables for a clean setup...");
-      //  await pool.query(`DROP TABLE IF EXISTS emrs CASCADE;`);
-      //  await pool.query(`DROP TABLE IF EXISTS doctor_profiles CASCADE;`);
-     //   await pool.query(`DROP TABLE IF EXISTS users CASCADE;`);
-      //  console.log("Existing tables dropped.");
-        // --- End of Development Only Section ---
-
+        // The CREATE TABLE IF NOT EXISTS commands will safely run without deleting data.
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id UUID PRIMARY KEY,
@@ -95,7 +85,7 @@ async function setupDatabase() {
             );
         `);
 
-        console.log("Tables created successfully.");
+        console.log("Tables verified successfully.");
 
         const adminCheck = await pool.query(`SELECT id FROM users WHERE email = $1`, ['admin@wetreat.com']);
         if (adminCheck.rows.length === 0) {
@@ -207,6 +197,23 @@ app.get('/api/emrs', async (req, res) => {
     }
 });
 
+// NEW ENDPOINT: Get all doctors with their profiles
+app.get('/api/doctors', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT u.id, dp.full_name 
+            FROM users u 
+            JOIN doctor_profiles dp ON u.id = dp.user_id 
+            WHERE u.role = 'doctor'
+            ORDER BY dp.full_name
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching doctors:', error);
+        res.status(500).json({ message: 'Server error fetching doctors' });
+    }
+});
+
 // Update an EMR
 app.put('/api/emrs/:id', async (req, res) => {
     const { id } = req.params;
@@ -242,12 +249,9 @@ app.get('/api/emrs/:id/generate-pdf', async (req, res) => {
             WHERE e.id = $1
         `, [id]);
         const emr = emrResult.rows[0];
-        if (!emr) {
-            return res.status(404).json({ message: 'EMR not found.' });
-        }
-        if (!emr.is_payment_confirmed) {
-            return res.status(403).json({ message: 'Payment not confirmed. PDF cannot be generated.' });
-        }
+        if (!emr) return res.status(404).json({ message: 'EMR not found.' });
+        if (!emr.is_payment_confirmed) return res.status(403).json({ message: 'Payment not confirmed. PDF cannot be generated.' });
+        
         const doc = new PDFDocument({ margin: 50 });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="Consultation_Report_${emr.id}.pdf"`);
