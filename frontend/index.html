@@ -9,6 +9,16 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        .status-badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .status-submitted_by_patient { background-color: #f59e0b; color: white; }
+        .status-assigned { background-color: #d97706; color: white; }
+        .status-closed { background-color: #6b7280; color: white; }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +26,7 @@
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
 
-    <div id="app" class="w-full max-w-md mx-auto">
+    <div id="app" class="w-full max-w-2xl mx-auto">
         
         <!-- Welcome View -->
         <div id="welcome-view" class="bg-white p-8 rounded-xl shadow-lg text-center">
@@ -70,9 +80,15 @@
 
         <!-- Admin Dashboard View (Initially Hidden) -->
         <div id="admin-dashboard-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Admin Dashboard</h2>
-            <p>Welcome, Admin! The list of EMRs will appear here.</p>
-            <button onclick="logout()" class="mt-6 w-full text-center text-red-600 hover:underline">Logout</button>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
+                <button onclick="logout()" class="text-sm font-semibold text-red-600 hover:text-red-800">Logout</button>
+            </div>
+            <!-- EMR list will be injected here by JavaScript -->
+            <div id="emr-list-container" class="space-y-4">
+                <!-- Loading state -->
+                <p id="emr-loading-state">Loading EMRs...</p>
+            </div>
         </div>
 
     </div>
@@ -89,6 +105,49 @@
                 document.getElementById(id).classList.add('hidden');
             });
             document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        // --- NEW: Admin Dashboard Logic ---
+        async function fetchAndDisplayEMRs() {
+            const container = document.getElementById('emr-list-container');
+            const loadingState = document.getElementById('emr-loading-state');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/emrs?userId=${currentUser.id}&userRole=${currentUser.role}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch EMRs.');
+                }
+                const emrs = await response.json();
+                
+                // Clear loading state
+                container.innerHTML = '';
+
+                if (emrs.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500">No EMRs have been submitted yet.</p>';
+                    return;
+                }
+
+                // Create and append a card for each EMR
+                emrs.forEach(emr => {
+                    const card = document.createElement('div');
+                    card.className = 'p-4 border rounded-lg bg-gray-50';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">${emr.patient_name}</h3>
+                                <p class="text-sm text-gray-600">${emr.patient_email}</p>
+                            </div>
+                            <span class="status-badge status-${emr.status}">${emr.status.replace(/_/g, ' ')}</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Submitted: ${new Date(emr.created_at).toLocaleString()}</p>
+                        <button class="mt-4 text-sm bg-gray-700 text-white py-2 px-3 rounded-md hover:bg-gray-800">View Details</button>
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (error) {
+                container.innerHTML = `<p class="text-red-500">${error.message}</p>`;
+            }
         }
 
         // --- Authentication Logic ---
@@ -116,6 +175,7 @@
 
                 if (currentUser.role === 'admin') {
                     showView('admin-dashboard-view');
+                    fetchAndDisplayEMRs(); // Fetch data right after showing the view
                 } else {
                     alert('Doctor dashboard is not yet implemented.');
                 }
@@ -129,6 +189,8 @@
         function logout() {
             currentUser = null;
             document.getElementById('login-form').reset();
+            // Clear the EMR list before logging out
+            document.getElementById('emr-list-container').innerHTML = '<p id="emr-loading-state">Loading EMRs...</p>';
             showView('welcome-view');
         }
     </script>
