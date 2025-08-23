@@ -1,7 +1,7 @@
 // backend/index.js
 // This Node.js Express application serves as the backend for the medical consultation platform.
 // It has been updated to use a new, more efficient PostgreSQL schema that aligns with the MVP workflow.
-// VERSION 3: Implemented a database connection pool to prevent freezing under load.
+// VERSION 4: Added DROP TABLE commands to ensure a clean DB schema on startup for development.
 
 const express = require('express');
 const cors = require('cors');
@@ -34,7 +34,17 @@ async function setupDatabase() {
         console.log("Connected to PostgreSQL database successfully.");
         
         console.log("Setting up database tables based on MVP schema...");
-        
+
+        // --- DEVELOPMENT ONLY: Drop existing tables to ensure a clean slate ---
+        // This is useful for development to avoid schema conflicts.
+        // REMOVE OR COMMENT OUT THIS SECTION FOR PRODUCTION.
+        console.log("Dropping existing tables for a clean setup...");
+        await pool.query(`DROP TABLE IF EXISTS emrs CASCADE;`);
+        await pool.query(`DROP TABLE IF EXISTS doctor_profiles CASCADE;`);
+        await pool.query(`DROP TABLE IF EXISTS users CASCADE;`);
+        console.log("Existing tables dropped.");
+        // --- End of Development Only Section ---
+
         // Users table for Admins and Doctors
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
@@ -95,7 +105,7 @@ async function setupDatabase() {
             );
         `);
 
-        console.log("Tables created or already exist.");
+        console.log("Tables created successfully.");
 
         // Seed initial admin user if not exists
         const adminCheck = await pool.query(`SELECT id FROM users WHERE email = $1`, ['admin@wetreat.com']);
