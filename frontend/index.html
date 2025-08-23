@@ -1,7 +1,7 @@
 <!--
 This is the updated HTML/JS frontend designed to make real API calls to a backend server.
 The in-browser "backend" logic has been removed.
-You will need to replace the wetreat-22-go-production.up.railway.app variable with the URL of your deployed Railway application.
+You will need to replace the BACKEND_URL variable with the URL of your deployed Railway application.
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -185,8 +185,8 @@ You will need to replace the wetreat-22-go-production.up.railway.app variable wi
         const documentFields = document.getElementById('document-fields');
 
         // IMPORTANT: Replace this with the actual URL of your deployed Railway backend.
-        // E.g., const wetreat-22-go-production.up.railway.app = 'https://your-app-name.railway.app';
-        const wetreat-22-go-production.up.railway.app = 'https://your-railway-app.railway.app'; 
+        // E.g., const BACKEND_URL = 'https://wetreat-22-go-production.up.railway.app';
+        const BACKEND_URL = 'https://wetreat-22-go-production.up.railway.app'; 
 
         // Add event listeners for role selection buttons
         patientBtn.addEventListener('click', () => {
@@ -241,7 +241,7 @@ You will need to replace the wetreat-22-go-production.up.railway.app variable wi
             showMessage('Logging in...', 'info');
 
             try {
-                const response = await fetch(`${wetreat-22-go-production.up.railway.app}/api/login`, {
+                const response = await fetch(`${BACKEND_URL}/api/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
@@ -321,7 +321,7 @@ You will need to replace the wetreat-22-go-production.up.railway.app variable wi
 
             // Here you would make a fetch call to the backend
             // try {
-            //     const response = await fetch(`${wetreat-22-go-production.up.railway.app}/api/submit-patient-record`, {
+            //     const response = await fetch(`${BACKEND_URL}/api/submit-patient-record`, {
             //         method: 'POST',
             //         headers: { 'Content-Type': 'application/json' },
             //         body: JSON.stringify(patientData)
@@ -575,7 +575,7 @@ You will need to replace the wetreat-22-go-production.up.railway.app variable wi
             // Placeholder for API call
             // try {
             //     const endpoint = selectedConsultationId ? `/api/update-consultation` : `/api/create-consultation`;
-            //     const response = await fetch(`${wetreat-22-go-production.up.railway.app}${endpoint}`, {
+            //     const response = await fetch(`${BACKEND_URL}${endpoint}`, {
             //         method: 'POST',
             //         headers: { 'Content-Type': 'application/json' },
             //         body: JSON.stringify(consultationData)
@@ -599,7 +599,7 @@ You will need to replace the wetreat-22-go-production.up.railway.app variable wi
 
             // Placeholder for API call to a backend service that generates PDFs
             // try {
-            //     const response = await fetch(`${wetreat-22-go-production.up.railway.app}/api/generate-pdf/${consultationId}`);
+            //     const response = await fetch(`${BACKEND_URL}/api/generate-pdf/${consultationId}`);
             //     if (response.ok) {
             //         const blob = await response.blob();
             //         const url = window.URL.createObjectURL(blob);
@@ -630,7 +630,7 @@ You will need to replace the wetreat-22-go-production.up.railway.app variable wi
             showMessage('Requesting consultation...', 'info');
 
             try {
-                const response = await fetch(`${wetreat-22-go-production.up.railway.app}/api/start-consultation`, {
+                const response = await fetch(`${BACKEND_URL}/api/start-consultation`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ patientId: currentUser.id })
@@ -665,7 +665,7 @@ You will need to replace the wetreat-22-go-production.up.railway.app variable wi
 
             // Here you would make a fetch call to the backend
             // try {
-            //     const response = await fetch(`${wetreat-22-go-production.up.railway.app}/api/create-user`, {
+            //     const response = await fetch(`${BACKEND_URL}/api/create-user`, {
             //         method: 'POST',
             //         headers: { 'Content-Type': 'application/json' },
             //         body: JSON.stringify({ username: newUsername, password: newPassword, role: newUserRole })
