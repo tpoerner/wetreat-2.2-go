@@ -78,6 +78,19 @@ async function setupDatabase() {
                 FOREIGN KEY(patientId) REFERENCES patients(id)
             );
         `);
+
+        // Messages table for in-platform communication between users
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS messages (
+                messageId TEXT PRIMARY KEY,
+                senderId TEXT NOT NULL,
+                receiverId TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                content TEXT NOT NULL,
+                FOREIGN KEY(senderId) REFERENCES users(id),
+                FOREIGN KEY(receiverId) REFERENCES users(id)
+            );
+        `);
         
         // Seed initial admin user if not exists
         const adminCheck = await client.query(`SELECT id FROM users WHERE username = $1`, ['admin']);
