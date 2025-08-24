@@ -220,13 +220,15 @@ app.put('/api/emrs/:id', async (req, res) => {
             await pool.query(`UPDATE emrs SET assigned_doctor_id = $1, is_payment_confirmed = $2, status = $3, updated_at = NOW() WHERE id = $4`,
             [updates.assignedDoctorId, updates.isPaymentConfirmed, updates.status, id]);
         } else if (role === 'doctor') {
-            // Only update the fields a doctor is allowed to change
+            // Updated to handle all fields
             await pool.query(`
                 UPDATE emrs SET
-                    doctor_diagnosis = $1, doctor_report = $2, doctor_recommendations = $3, doctor_private_notes = $4,
-                    consultation_type = $5, status = $6, updated_at = NOW()
-                WHERE id = $7`,
+                    symptoms = $1, medical_history = $2, current_medication = $3, medical_documents = $4,
+                    doctor_diagnosis = $5, doctor_report = $6, doctor_recommendations = $7, doctor_private_notes = $8,
+                    consultation_type = $9, status = $10, updated_at = NOW()
+                WHERE id = $11`,
             [
+                updates.symptoms, updates.medicalHistory, updates.currentMedication, JSON.stringify(updates.medicalDocuments),
                 updates.doctorDiagnosis, updates.doctorReport, updates.doctorRecommendations, updates.doctorPrivateNotes,
                 JSON.stringify(updates.consultationType), updates.status, id
             ]);
