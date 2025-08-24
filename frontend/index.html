@@ -499,10 +499,9 @@
             });
 
             docForm.addEventListener('submit', handleDoctorUpdate);
-
-            // Corrected "Finalize" button logic
             const finalizeButton = document.getElementById('finalize-report-button');
             if (emr.status !== 'report_complete') {
+                 // The button's primary action is to finalize the record and then generate the PDF
                 finalizeButton.addEventListener('click', async () => {
                     const updates = {
                         doctorDiagnosis: document.getElementById('doctor-diagnosis').value,
@@ -513,19 +512,19 @@
                         status: 'report_complete'
                     };
                     try {
-                        await handleApiRequest(`${API_URL}/api/emrs/${currentEMRId}`, {
+                        const result = await handleApiRequest(`${API_URL}/api/emrs/${currentEMRId}`, {
                             method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'doctor', updates })
                         });
-                        // Then trigger PDF download
-                        window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf`, '_blank');
-                        // Reload the view to show the finalized state
-                        renderView('doctorDashboard');
+                        if (result) {
+                            alert('Record finalized and report generated!');
+                            window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf`, '_blank');
+                            renderView('doctorDashboard');
+                        }
                     } catch (error) {
                         alert('Failed to finalize report. Please try again.');
                     }
                 });
             } else {
-                finalizeButton.disabled = false;
                 finalizeButton.textContent = 'Generate PDF Report';
                 finalizeButton.classList.replace('bg-green-600', 'bg-blue-600');
                 finalizeButton.classList.replace('hover:bg-green-700', 'hover:bg-blue-700');
@@ -563,8 +562,7 @@
             messageDiv.classList.add('hidden');
             const emr = allEMRs.find(e => e.id === currentEMRId);
             
-            const selectedTypes = [];
-            document.querySelectorAll('input[name="consultationType"]:checked').forEach(checkbox => selectedTypes.push(checkbox.value));
+            const selectedTypes = Array.from(document.querySelectorAll('input[name="consultationType"]:checked')).map(cb => cb.value);
             
             const updates = {
                 doctorDiagnosis: document.getElementById('doctor-diagnosis').value,
