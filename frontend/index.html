@@ -81,7 +81,7 @@
         };
 
         // --- RENDER & NAVIGATION ---
-        function renderView(viewName) {
+        function renderView(viewName, data = null) {
             app.innerHTML = templates[viewName] || '<p>Loading...</p>';
             const postRenderActions = {
                 login: () => document.getElementById('login-form').addEventListener('submit', handleLogin),
@@ -407,6 +407,67 @@
             } catch (error) { container.innerHTML = `<p class="text-red-500">${error.message}</p>`; }
         }
         
+        function viewEMRDetailsForAdmin(emrId) {
+            currentEMRId = emrId;
+            const emr = allEMRs.find(e => e.id === emrId);
+            if (!emr) return;
+
+            app.innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800">Consultation Details</h2><button onclick="renderView('adminDashboard', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back</button></div>
+                    <div id="emr-detail-content-admin" class="space-y-4"></div>
+                    <div id="admin-actions-section" class="mt-6 pt-6 border-t"><h3 class="text-lg font-semibold text-gray-700">Admin Actions</h3><form id="admin-update-form" class="space-y-4 mt-4"><div><label for="assign-doctor" class="block text-sm font-medium">Assign Doctor</label><select id="assign-doctor" name="assignedDoctorId" class="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"></select></div><div class="flex items-center"><input id="payment-confirmed" name="isPaymentConfirmed" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="payment-confirmed" class="ml-2 block text-sm">Payment Confirmed</label></div><button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save Changes</button></form><div id="admin-update-message" class="hidden mt-4 text-center text-sm"></div></div>
+                </div>`;
+
+            const detailContainer = document.getElementById('emr-detail-content-admin');
+            detailContainer.innerHTML = `<div class="border-b pb-4"><h3 class="text-lg font-semibold text-gray-800">Patient Information</h3><p><strong class="font-medium text-gray-600">Name:</strong> ${emr.patient_name||'N/A'}</p><p><strong class="font-medium text-gray-600">Email:</strong> ${emr.patient_email||'N/A'}</p><p><strong class="font-medium text-gray-600">Date of Birth:</strong> ${emr.patient_dob?new Date(emr.patient_dob).toLocaleDateString():'N/A'}</p></div><div class="py-4"><h3 class="text-lg font-semibold text-gray-800">Medical Information</h3><p><strong class="font-medium text-gray-600">Symptoms:</strong></p><p class="pl-2">${emr.symptoms||'N/A'}</p><p class="mt-2"><strong class="font-medium text-gray-600">Medical History:</strong></p><p class="pl-2">${emr.medical_history||'N/A'}</p><p class="mt-2"><strong class="font-medium text-gray-600">Current Medication:</strong></p><p class="pl-2">${emr.current_medication||'N/A'}</p></div>`;
+            
+            const doctorSelect = document.getElementById('assign-doctor');
+            doctorSelect.innerHTML = '<option value="">-- Select a Doctor --</option>';
+            allDoctors.forEach(doc => {
+                const option = document.createElement('option');
+                option.value = doc.user_id;
+                option.textContent = doc.full_name;
+                if (emr.assigned_doctor_id === doc.user_id) option.selected = true;
+                doctorSelect.appendChild(option);
+            });
+
+            document.getElementById('payment-confirmed').checked = emr.is_payment_confirmed;
+            document.getElementById('admin-update-form').addEventListener('submit', handleAdminUpdate);
+        }
+
+        async function handleAdminUpdate(event) {
+            event.preventDefault();
+            const messageDiv = document.getElementById('admin-update-message');
+            messageDiv.classList.add('hidden');
+            const updates = {
+                assignedDoctorId: document.getElementById('assign-doctor').value || null,
+                isPaymentConfirmed: document.getElementById('payment-confirmed').checked,
+                status: document.getElementById('assign-doctor').value ? 'assigned' : 'submitted_by_patient'
+            };
+            try {
+                await handleApiRequest(`${API_URL}/api/emrs/${currentEMRId}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'admin', updates })
+                });
+                messageDiv.textContent = 'Changes saved successfully!';
+                messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+            } catch (error) {
+                messageDiv.textContent = 'Failed to save changes.';
+                messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+            } finally {
+                messageDiv.classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            allEMRs = [];
+            allDoctors = [];
+            currentEMRId = null;
+            currentDoctorId = null;
+            renderView('welcome');
+        }
+
         // --- INITIAL LOAD ---
         async function initializeApp() {
             await fetchAllDoctors();
