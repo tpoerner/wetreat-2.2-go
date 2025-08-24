@@ -1,11 +1,12 @@
 // backend/index.js
-// This is the complete, stable backend for the WeTreat medical consultation platform.
+// This version includes an improved PDF layout with the company logo.
 
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const { v4: uuidv4 } = require('uuid');
 const PDFDocument = require('pdfkit');
+const https = require('https'); // Added for fetching the logo image
 
 // 1. Initialize Express App
 const app = express();
@@ -233,6 +234,17 @@ app.delete('/api/users/doctor/:userId', async (req, res) => {
     } catch (error) { res.status(500).json({ message: 'Failed to delete doctor' }); }
 });
 
+// Helper function to fetch an image from a URL and return a buffer
+function fetchImage(src) {
+    return new Promise((resolve, reject) => {
+        https.get(src, (res) => {
+            const chunks = [];
+            res.on('data', (chunk) => chunks.push(chunk));
+            res.on('end', () => resolve(Buffer.concat(chunks)));
+        }).on('error', (err) => reject(err));
+    });
+}
+
 // Generate PDF
 app.get('/api/emrs/:id/generate-pdf', async (req, res) => {
     try {
@@ -240,19 +252,47 @@ app.get('/api/emrs/:id/generate-pdf', async (req, res) => {
         const emr = emrResult.rows[0];
         if (!emr) return res.status(404).json({ message: 'EMR not found.' });
         if (!emr.is_payment_confirmed) return res.status(403).json({ message: 'Payment not confirmed.' });
+        
+        const logoBuffer = await fetchImage('https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png');
+
         const doc = new PDFDocument({ margin: 50 });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="Report_${emr.id}.pdf"`);
         doc.pipe(res);
-        doc.fontSize(18).text('Medical Consultation Report', { align: 'center' }).moveDown(1);
+
+        // --- PDF Content ---
+        doc.image(logoBuffer, {
+            fit: [80, 80],
+            align: 'center'
+        });
+        doc.moveDown(2);
+
+        doc.fontSize(20).text('Medical Consultation Report', { align: 'center' });
+        doc.moveDown(2);
+
         doc.fontSize(12).text(`Patient Name: ${emr.patient_name}`);
-        doc.text(`Consulting Physician: ${emr.doctor_name || 'N/A'}`).moveDown(1.5);
-        doc.fontSize(14).text("Physician's Report", { underline: true }).moveDown(0.5);
-        doc.fontSize(11).text(emr.doctor_report || 'Pending report...').moveDown(1);
-        doc.fontSize(12).text('Recommendations').moveDown(0.2);
-        doc.fontSize(11).text(emr.doctor_recommendations || 'Pending recommendations...').moveDown(2);
+        doc.text(`Consulting Physician: ${emr.doctor_name || 'N/A'}`);
+        doc.moveDown(2);
+
+        doc.fontSize(14).text("Physician's Report", { underline: true }).moveDown(1);
+        doc.fontSize(11).text(emr.doctor_report || 'Pending report...');
+        doc.moveDown(2);
+
+        doc.fontSize(14).text('Recommendations', { underline: true }).moveDown(1);
+        doc.fontSize(11).text(emr.doctor_recommendations || 'Pending recommendations...');
+        doc.moveDown(4);
+
+        doc.fontSize(10).text(`Report generated on: ${new Date().toLocaleString()}`, { align: 'left' });
+        doc.moveDown(1);
+        
+        doc.text('_________________________', { align: 'right' });
+        doc.text('Physician Signature', { align: 'right' });
+
         doc.end();
-    } catch (error) { res.status(500).json({ message: 'Server error' }); }
+    } catch (error) { 
+        console.error("PDF Generation Error:", error);
+        res.status(500).json({ message: 'Server error generating PDF' }); 
+    }
 });
 
 // 5. --- Start the Server ---
