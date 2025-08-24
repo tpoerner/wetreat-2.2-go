@@ -258,7 +258,13 @@ app.get('/api/emrs/:id/generate-pdf', async (req, res) => {
         if (!emr) return res.status(404).json({ message: 'EMR not found.' });
         if (!emr.is_payment_confirmed) return res.status(403).json({ message: 'Payment not confirmed.' });
         
-        const logoBuffer = await fetchImage('https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png');
+        let logoBuffer = null;
+        try {
+            logoBuffer = await fetchImage('https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png');
+        } catch (imageError) {
+            console.error("Failed to fetch logo image:", imageError);
+            // Continue execution without the logo
+        }
 
         const doc = new PDFDocument({ margin: 50 });
         res.setHeader('Content-Type', 'application/pdf');
@@ -266,7 +272,9 @@ app.get('/api/emrs/:id/generate-pdf', async (req, res) => {
         doc.pipe(res);
 
         // --- PDF Content ---
-        doc.image(logoBuffer, { fit: [80, 80], align: 'center' }).moveDown(2);
+        if (logoBuffer) {
+            doc.image(logoBuffer, { fit: [80, 80], align: 'center' }).moveDown(2);
+        }
         doc.fontSize(20).text('Medical Consultation Report', { align: 'center' }).moveDown(2);
 
         doc.fontSize(14).text('Patient Data', { underline: true }).moveDown(1);
