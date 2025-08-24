@@ -1,6 +1,5 @@
 // backend/index.js
-// This version ensures the database tables are created and seeded with default users reliably.
-// It contains NO table-dropping logic to ensure data persistence.
+// This is the complete, stable backend for the WeTreat medical consultation platform.
 
 const express = require('express');
 const cors = require('cors');
@@ -94,7 +93,6 @@ async function setupDatabase() {
         console.log("Tables verified successfully.");
 
         // --- Seed Initial Users ---
-        // This block will now safely run and add users only if they are missing.
         const adminCheck = await pool.query(`SELECT id FROM users WHERE email = $1`, ['admin@wetreat.com']);
         if (adminCheck.rows.length === 0) {
             const adminId = uuidv4();
@@ -123,10 +121,22 @@ async function setupDatabase() {
     }
 }
 
-// --- ALL OTHER API ENDPOINTS remain the same ---
-// ... (the rest of your API routes for login, emrs, doctors, etc.) ...
+// 4. --- API Endpoints ---
 
-// Login for Admins and Doctors
+// Patient EMR Submission
+app.post('/api/emr/submit', async (req, res) => {
+    const { email, password, name, dob, symptoms, medicalHistory, medication, medicalDocuments, notes } = req.body;
+    try {
+        const emrId = uuidv4();
+        await pool.query(`
+            INSERT INTO emrs (id, patient_email, patient_password, patient_name, patient_dob, symptoms, medical_history, current_medication, medical_documents, patient_notes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `, [emrId, email, password, name, dob, symptoms, medicalHistory, medication, JSON.stringify(medicalDocuments), notes]);
+        res.status(201).json({ message: 'EMR submitted successfully.', emrId });
+    } catch (error) { res.status(500).json({ message: 'Failed to submit EMR' }); }
+});
+
+// Login
 app.post('/api/auth/login', async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -139,16 +149,111 @@ app.post('/api/auth/login', async (req, res) => {
                 profile = profileResult.rows[0];
             }
             res.json({ message: 'Login successful', user, profile });
-        } else {
-            res.status(401).json({ message: 'Invalid credentials' });
-        }
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+        } else { res.status(401).json({ message: 'Invalid credentials' }); }
+    } catch (error) { res.status(500).json({ message: 'Server error' }); }
 });
 
-// All other routes...
+// Create Doctor (Admin)
+app.post('/api/users/doctor', async (req, res) => {
+    const { email, password, profile } = req.body;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const userResult = await client.query(`INSERT INTO users (id, email, password, role) VALUES ($1, $2, $3, 'doctor') RETURNING id`, [uuidv4(), email, password]);
+        const userId = userResult.rows[0].id;
+        await client.query(`
+            INSERT INTO doctor_profiles (id, user_id, full_name, photo_url, specialty, expertise_area, current_affiliation, linkedin_url, fee_office, fee_home, fee_video, fee_phone, fee_review)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+            [uuidv4(), userId, profile.fullName, profile.photoUrl, profile.specialty, profile.expertiseArea, profile.currentAffiliation, profile.linkedinUrl, profile.feeOffice, profile.feeHome, profile.feeVideo, profile.feePhone, profile.feeReview]
+        );
+        await client.query('COMMIT');
+        res.status(201).json({ message: 'Doctor created successfully' });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        res.status(500).json({ message: 'Failed to create doctor' });
+    } finally { client.release(); }
+});
+
+// Get all Doctors
+app.get('/api/doctors', async (req, res) => {
+    try {
+        const result = await pool.query(`SELECT u.email, dp.* FROM doctor_profiles dp JOIN users u ON dp.user_id = u.id ORDER BY dp.full_name`);
+        res.json(result.rows);
+    } catch (error) { res.status(500).json({ message: 'Server error' }); }
+});
+
+// Get EMRs
+app.get('/api/emrs', async (req, res) => {
+    const { userId, userRole } = req.query; 
+    try {
+        let result;
+        if (userRole === 'admin') result = await pool.query('SELECT * FROM emrs ORDER BY created_at DESC');
+        else if (userRole === 'doctor') result = await pool.query('SELECT * FROM emrs WHERE assigned_doctor_id = $1 ORDER BY created_at DESC', [userId]);
+        else return res.status(403).json({ message: 'Forbidden' });
+        res.json(result.rows);
+    } catch (error) { res.status(500).json({ message: 'Server error' }); }
+});
+
+// Update Doctor Profile (Admin)
+app.put('/api/doctor-profiles/:userId', async (req, res) => {
+    const { userId } = req.params;
+    const profile = req.body;
+    try {
+        await pool.query(`
+            UPDATE doctor_profiles SET full_name = $1, photo_url = $2, specialty = $3, expertise_area = $4, current_affiliation = $5, linkedin_url = $6, fee_office = $7, fee_home = $8, fee_video = $9, fee_phone = $10, fee_review = $11
+            WHERE user_id = $12`,
+            [profile.fullName, profile.photoUrl, profile.specialty, profile.expertiseArea, profile.currentAffiliation, profile.linkedinUrl, profile.feeOffice, profile.feeHome, profile.feeVideo, profile.feePhone, profile.feeReview, userId]
+        );
+        res.status(200).json({ message: 'Doctor profile updated' });
+    } catch (error) { res.status(500).json({ message: 'Failed to update profile' }); }
+});
+
+// Update an EMR
+app.put('/api/emrs/:id', async (req, res) => {
+    const { id } = req.params;
+    const { role, updates } = req.body;
+    try {
+        if (role === 'admin') {
+            await pool.query(`UPDATE emrs SET assigned_doctor_id = $1, is_payment_confirmed = $2, status = $3, updated_at = NOW() WHERE id = $4`,
+            [updates.assignedDoctorId, updates.isPaymentConfirmed, updates.status, id]);
+        } else if (role === 'doctor') {
+            await pool.query(`UPDATE emrs SET doctor_report = $1, doctor_recommendations = $2, doctor_private_notes = $3, consultation_type = $4, status = $5, updated_at = NOW() WHERE id = $6`,
+            [updates.doctorReport, updates.doctorRecommendations, updates.doctorPrivateNotes, JSON.stringify(updates.consultationType), updates.status, id]);
+        } else { return res.status(403).json({ message: 'Invalid role' }); }
+        res.status(200).json({ message: 'EMR updated successfully' });
+    } catch (error) { res.status(500).json({ message: 'Failed to update EMR' }); }
+});
+
+// Delete Doctor (Admin)
+app.delete('/api/users/doctor/:userId', async (req, res) => {
+    const { userId } = req.params;
+    try {
+        await pool.query(`DELETE FROM users WHERE id = $1 AND role = 'doctor'`, [userId]);
+        res.status(200).json({ message: 'Doctor deleted successfully' });
+    } catch (error) { res.status(500).json({ message: 'Failed to delete doctor' }); }
+});
+
+// Generate PDF
+app.get('/api/emrs/:id/generate-pdf', async (req, res) => {
+    try {
+        const emrResult = await pool.query(`SELECT e.*, dp.full_name as doctor_name FROM emrs e LEFT JOIN doctor_profiles dp ON e.assigned_doctor_id = dp.user_id WHERE e.id = $1`, [req.params.id]);
+        const emr = emrResult.rows[0];
+        if (!emr) return res.status(404).json({ message: 'EMR not found.' });
+        if (!emr.is_payment_confirmed) return res.status(403).json({ message: 'Payment not confirmed.' });
+        const doc = new PDFDocument({ margin: 50 });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="Report_${emr.id}.pdf"`);
+        doc.pipe(res);
+        doc.fontSize(18).text('Medical Consultation Report', { align: 'center' }).moveDown(1);
+        doc.fontSize(12).text(`Patient Name: ${emr.patient_name}`);
+        doc.text(`Consulting Physician: ${emr.doctor_name || 'N/A'}`).moveDown(1.5);
+        doc.fontSize(14).text("Physician's Report", { underline: true }).moveDown(0.5);
+        doc.fontSize(11).text(emr.doctor_report || 'Pending report...').moveDown(1);
+        doc.fontSize(12).text('Recommendations').moveDown(0.2);
+        doc.fontSize(11).text(emr.doctor_recommendations || 'Pending recommendations...').moveDown(2);
+        doc.end();
+    } catch (error) { res.status(500).json({ message: 'Server error' }); }
+});
 
 // 5. --- Start the Server ---
 async function startServer() {
