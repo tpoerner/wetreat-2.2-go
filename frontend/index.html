@@ -284,6 +284,76 @@
                 </div>`).join('');
         }
 
+    // Instruction to complete the patient input form
+        function openPatientInstructionsModal() {
+  modalContainer.innerHTML = `
+    <div class="modal-overlay" onclick="closePatientInstructionsModal(event)">
+      <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg w-full max-w-3xl modal-content" onclick="event.stopPropagation()">
+        <div class="flex items-start justify-between">
+          <h3 class="text-xl md:text-2xl font-bold text-gray-800">Instructions for Completing the Consultation Request</h3>
+          <button class="ml-4 text-gray-500 hover:text-gray-700" onclick="closePatientInstructionsModal(event)">✕</button>
+        </div>
+
+        <div class="mt-4 space-y-4 text-sm md:text-base leading-relaxed text-gray-800">
+          <div class="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p class="font-semibold">Please read carefully before submitting your request.</p>
+          </div>
+
+          <h4 class="text-lg font-semibold mt-4">1) Uploading Medical Documents</h4>
+          <ul class="list-disc pl-6 space-y-1">
+            <li><strong>Allowed:</strong> <u>PDF documents</u> (ideally <u>password-protected</u>) and <u>links to hospital PACS / DICOM web viewers</u>.</li>
+            <li><strong>Not accepted:</strong> WeTreat does <u>not</u> accept medical documents via WhatsApp, WeTransfer, email attachments, or other file-sharing services.</li>
+            <li>The WeTreat platform is <strong>view-only</strong>: we only view your PDFs and DICOM imaging; we do not download or redistribute your files.</li>
+          </ul>
+
+          <h4 class="text-lg font-semibold mt-4">2) Completing the Form</h4>
+          <ul class="list-disc pl-6 space-y-1">
+            <li>Provide accurate personal and medical information (symptoms, medical history, current medication).</li>
+            <li>Use clear descriptions for symptoms (onset, triggers, duration, associated signs).</li>
+            <li>Optionally review physician profiles listed on the form and add notes about preferences or availability.</li>
+          </ul>
+
+          <h4 class="text-lg font-semibold mt-4">3) Onboarding Process After Submission</h4>
+          <ol class="list-decimal pl-6 space-y-1">
+            <li><strong>Admin review:</strong> Your submission is reviewed for completeness and secure access compliance (GDPR).</li>
+            <li><strong>Direct contact:</strong> A WeTreat administrator will <u>email or call you directly</u> (outside this website) to discuss scheduling and billing.</li>
+            <li><strong>Payment & consent:</strong> A consulting physician is assigned only after <u>payment confirmation</u> and <u>written patient consent</u> are received.</li>
+          </ol>
+
+          <h4 class="text-lg font-semibold mt-4">4) Consultation and Report</h4>
+          <ul class="list-disc pl-6 space-y-1">
+            <li>The consulting physician performs the consultation and completes a medical report.</li>
+            <li>The report may be provided electronically in <u>PDF format</u>, ideally with an <u>electronic signature</u>.</li>
+            <li>Upon request, WeTreat admins may later forward completed PDF reports to the patient.</li>
+          </ul>
+
+          <h4 class="text-lg font-semibold mt-4">5) Responsibilities and Legal Notes</h4>
+          <ul class="list-disc pl-6 space-y-1">
+            <li><strong>Medical responsibility</strong> lies entirely with the <strong>consulting physician</strong>. WeTreat does <u>not</u> provide medical care and assumes no medical liability.</li>
+            <li>WeTreat provides a secure (tele)consultation platform only.</li>
+            <li>All personal data and medical content are processed in accordance with <strong>GDPR</strong> and relevant EU data protection and medical regulations.</li>
+            <li>By submitting this form, you consent to the secure processing of your data for onboarding, scheduling, and facilitating the consultation.</li>
+          </ul>
+
+          <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <p class="text-sm"><strong>Note:</strong> If your documents are password-protected, please include the password in the “Medical Documents” section so the physician can view them.</p>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+          <button class="px-4 py-2 rounded-md bg-gray-800 text-white hover:bg-gray-900" onclick="closePatientInstructionsModal(event)">I Understand</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function closePatientInstructionsModal(event) {
+  if (event) event.stopPropagation();
+  modalContainer.innerHTML = '';
+}
+
+        
         function openEditDoctorModal(userId) {
             currentDoctorId = userId;
             const doctor = allDoctors.find(d => d.user_id === userId);
