@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>WeTreat Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .status-badge { padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
+        .status-submitted_by_patient { background-color: #f59e0b; color: white; }
+        .status-assigned { background-color: #d97706; color: white; }
+        .status-closed { background-color: #6b7280; color: white; }
+        .status-report_complete { background-color: #2563eb; color: white; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
+        .modal-content { max-height: 90vh; overflow-y: auto; }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div id="app" class="w-full max-w-3xl mx-auto"></div>
+    <div id="modal-container"></div>
+
+    <script>
+        // keep everything the same as user provided until the two functions
+
+        function viewEMRDetailsForAdmin(emrId) {
+            currentEMRId = emrId;
+            const emr = allEMRs.find(e => e.id === emrId);
+            if (!emr) return;
+
+            app.innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center space-x-3">
+                          <img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" class="w-8 h-8 rounded-full object-cover">
+                          <h2 class="text-2xl font-bold text-gray-800">Consultation Details</h2>
+                        </div>
+                        <button onclick="renderView('adminDashboard', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back</button>
+                    </div>
+                    <div id="emr-detail-content-admin" class="space-y-4"></div>
+                    <div id="admin-actions-section" class="mt-6 pt-6 border-t">
+                        <h3 class="text-lg font-semibold text-gray-700">Admin Actions</h3>
+                        <form id="admin-update-form" class="space-y-4 mt-4">
+                            <div>
+                                <label for="assign-doctor" class="block text-sm font-medium">Assign Doctor</label>
+                                <select id="assign-doctor" name="assignedDoctorId" class="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"></select>
+                            </div>
+                            <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save Changes</button>
+                        </form>
+                        <div id="admin-update-message" class="hidden mt-4 text-center text-sm"></div>
+                    </div>
+                </div>`;
+            // rest unchanged...
+        }
+
+        function viewEMRDetailsForDoctor(emrId) {
+            currentEMRId = emrId;
+            currentEMR = allEMRs.find(e => e.id === emrId);
+            if (!currentEMR) return;
+
+            app.innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center space-x-3">
+                          <img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" class="w-8 h-8 rounded-full object-cover">
+                          <h2 class="text-2xl font-bold text-gray-800">Consultation Details</h2>
+                        </div>
+                        <button onclick="renderView('doctorDashboard')" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back</button>
+                    </div>
+                    <div id="emr-detail-content-doctor" class="space-y-4"></div>
+                    <div id="doctor-actions-section" class="mt-6 pt-6 border-t">
+                        <h3 class="text-lg font-semibold text-gray-700">Section #2: Your Report</h3>
+                        <form id="doctor-form" class="space-y-4 mt-4"></form>
+                        <div id="doctor-form-message" class="hidden mt-4 text-center text-sm"></div>
+                    </div>
+                </div>`;
+            // rest unchanged...
+        }
+    </script>
+</body>
+</html>
