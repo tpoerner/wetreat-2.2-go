@@ -22,74 +22,35 @@
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
 
     <div id="app" class="w-full max-w-3xl mx-auto">
-        <!-- Views will be rendered here by JavaScript -->
-    </div>
-    
-    <!-- Modal container -->
-    <div id="modal-container"></div>
+        
+        <!-- Welcome View -->
+        <div id="welcome-view" class="bg-white p-8 rounded-xl shadow-lg text-center">
+            <img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" alt="WeTreat Logo" class="mx-auto w-32 h-32 rounded-full mb-6 object-cover">
+            <h1 class="text-3xl font-bold text-gray-800">Welcome to WeTreat</h1>
+            <p class="text-gray-600 mt-2 mb-8">Your trusted online medical consultation platform.</p>
+            <div class="space-y-4">
+                <h2 class="text-lg font-semibold text-gray-700">Please select your role:</h2>
+                <button onclick="showView('patient-form-view')" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700">I am a Patient</button>
+                <button onclick="showView('login-view')" class="w-full bg-gray-700 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800">I am a Doctor or Admin</button>
+            </div>
+        </div>
 
-    <script>
-        // --- STATE MANAGEMENT ---
-        const API_URL = 'https://wetreat-22-go-production.up.railway.app'; 
-        let currentUser = null, allEMRs = [], allDoctors = [], currentEMRId = null, currentDoctorId = null;
-        const app = document.getElementById('app');
-        const modalContainer = document.getElementById('modal-container');
+        <!-- Login View -->
+        <div id="login-view" class="hidden bg-white p-8 rounded-xl shadow-lg max-w-md mx-auto">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Doctor & Admin Portal</h2>
+            <form id="login-form" class="space-y-4">
+                <div><label for="email" class="block text-sm font-medium">Email</label><input type="email" id="email" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                <div><label for="password" class="block text-sm font-medium">Password</label><input type="password" id="password" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                <button type="submit" class="w-full flex justify-center py-3 px-4 border rounded-md text-white bg-gray-700 hover:bg-gray-800">Login</button>
+            </form>
+            <div id="login-error" class="hidden mt-4 text-center text-sm text-red-600"></div>
+            <button onclick="showView('welcome-view')" class="mt-6 w-full text-center text-blue-600 hover:underline text-sm">&larr; Back</button>
+        </div>
 
-        // --- TEMPLATES for different views ---
-        const templates = {
-            welcome: `
-                <div class="bg-white p-8 rounded-xl shadow-lg text-center">
-                    <img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" alt="WeTreat Logo" class="mx-auto w-32 h-32 rounded-full mb-6 object-cover">
-                    <h1 class="text-3xl font-bold text-gray-800">Welcome to WeTreat</h1>
-                    <p class="text-gray-600 mt-2 mb-8">Your trusted online medical consultation platform.</p>
-                    <div class="space-y-4">
-                        <h2 class="text-lg font-semibold text-gray-700">Please select your role:</h2>
-                        <button onclick="renderView('patientForm')" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700">I am a Patient</button>
-                        <button onclick="renderView('login')" class="w-full bg-gray-700 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800">I am a Doctor or Admin</button>
-                    </div>
-                </div>`,
-            login: `
-                <div class="bg-white p-8 rounded-xl shadow-lg max-w-md mx-auto">
-                    <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Doctor & Admin Portal</h2>
-                    <form id="login-form" class="space-y-4">
-                        <div><label for="email" class="block text-sm font-medium">Email</label><input type="email" id="email" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                        <div><label for="password" class="block text-sm font-medium">Password</label><input type="password" id="password" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                        <button type="submit" class="w-full flex justify-center py-3 px-4 border rounded-md text-white bg-gray-700 hover:bg-gray-800">Login</button>
-                    </form>
-                    <div id="login-error" class="hidden mt-4 text-center text-sm text-red-600"></div>
-                    <button onclick="renderView('welcome')" class="mt-6 w-full text-center text-blue-600 hover:underline text-sm">&larr; Back</button>
-                </div>`,
-            patientForm: `...`,
-            adminDashboard: `...`,
-            doctorDashboard: `...`,
-            manageDoctors: `...`,
-        };
-
-        // --- RENDER & NAVIGATION ---
-        function renderView(viewName, data = null) {
-            app.innerHTML = templates[viewName] || '<p>Loading...</p>';
-            const postRenderActions = {
-                login: () => document.getElementById('login-form').addEventListener('submit', handleLogin),
-                patientForm: renderPatientForm,
-                adminDashboard: fetchAndDisplayAdminEMRs,
-                doctorDashboard: fetchAndDisplayDoctorEMRs,
-                manageDoctors: renderManageDoctors
-            };
-            if (postRenderActions[viewName]) postRenderActions[viewName]();
-        }
-
-        // --- DYNAMIC VIEW BUILDERS ---
-        function renderPatientForm() {
-            app.innerHTML = `
-                <div class="bg-white p-8 rounded-xl shadow-lg">
-                    <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">New Consultation Request</h2>
-                    <form id="patient-form" class="space-y-6"></form>
-                    <div id="patient-form-message" class="hidden mt-4 text-center text-sm"></div>
-                    <button onclick="renderView('welcome')" class="mt-6 w-full text-center text-blue-600 hover:underline text-sm">&larr; Back to Welcome</button>
-                </div>`;
-            
-            const form = document.getElementById('patient-form');
-            form.innerHTML = `
+        <!-- Patient Form View -->
+        <div id="patient-form-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">New Consultation Request</h2>
+            <form id="patient-form" class="space-y-6">
                 <fieldset class="border p-4 rounded-md"><legend class="text-lg font-semibold px-2">Account</legend>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div><label class="block text-sm font-medium">Email</label><input type="email" name="email" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
@@ -112,10 +73,94 @@
                     <div><label class="block text-sm font-medium">Notes</label><textarea name="notes" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md" placeholder="Mention preferred doctor or scheduling needs here."></textarea></div>
                 </fieldset>
                 <button type="submit" class="w-full flex justify-center py-3 px-4 mt-4 border rounded-md text-white bg-blue-600 hover:bg-blue-700">Submit for Review</button>
-            `;
-            form.addEventListener('submit', handlePatientFormSubmit);
-            renderDoctorProfilesForPatient();
-            addDocumentRow();
+            </form>
+            <div id="patient-form-message" class="hidden mt-4 text-center text-sm"></div>
+            <button onclick="showView('welcome-view')" class="mt-6 w-full text-center text-blue-600 hover:underline text-sm">&larr; Back to Welcome</button>
+        </div>
+
+        <!-- Admin Dashboard View -->
+        <div id="admin-dashboard-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
+            <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800">Admin Dashboard</h2><div class="flex space-x-4"><button onclick="showView('manage-doctors-view')" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Manage Doctors</button><button onclick="logout()" class="text-sm font-semibold text-red-600 hover:text-red-800">Logout</button></div></div>
+            <div id="emr-list-container" class="space-y-4"></div>
+        </div>
+
+        <!-- Doctor Dashboard View -->
+        <div id="doctor-dashboard-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
+            <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800">Doctor Dashboard</h2><button onclick="logout()" class="text-sm font-semibold text-red-600 hover:text-red-800">Logout</button></div>
+            <div id="doctor-emr-list-container" class="space-y-4"></div>
+        </div>
+
+        <!-- EMR Detail View (Admin) -->
+        <div id="emr-detail-view-admin" class="hidden bg-white p-8 rounded-xl shadow-lg">
+            <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800">Consultation Details</h2><button onclick="showView('admin-dashboard-view', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back</button></div>
+            <div id="emr-detail-content-admin" class="space-y-4"></div>
+            <div id="admin-actions-section" class="mt-6 pt-6 border-t"><h3 class="text-lg font-semibold text-gray-700">Admin Actions</h3><form id="admin-update-form" class="space-y-4 mt-4"><div><label for="assign-doctor" class="block text-sm font-medium">Assign Doctor</label><select id="assign-doctor" name="assignedDoctorId" class="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"></select></div><div class="flex items-center"><input id="payment-confirmed" name="isPaymentConfirmed" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="payment-confirmed" class="ml-2 block text-sm">Payment Confirmed</label></div><button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save Changes</button></form><div id="admin-update-message" class="hidden mt-4 text-center text-sm"></div></div>
+        </div>
+        
+        <!-- EMR Detail View (Doctor) -->
+        <div id="emr-detail-view-doctor" class="hidden bg-white p-8 rounded-xl shadow-lg">
+            <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800">Consultation Details</h2><button onclick="showView('doctor-dashboard-view', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back</button></div>
+            <div id="emr-detail-content-doctor" class="space-y-4"></div>
+            <div id="doctor-actions-section" class="mt-6 pt-6 border-t"><h3 class="text-lg font-semibold text-gray-700">Section #2: Your Report</h3><form id="doctor-update-form" class="space-y-4 mt-4"><div><label for="doctor-report" class="block text-sm font-medium">Report & Findings</label><textarea id="doctor-report" name="doctorReport" rows="4" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div><div><label for="doctor-recommendations" class="block text-sm font-medium">Recommendations</label><textarea id="doctor-recommendations" name="doctorRecommendations" rows="4" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div><div><label for="doctor-private-notes" class="block text-sm font-medium">Private Notes</label><textarea id="doctor-private-notes" name="doctorPrivateNotes" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div><button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save Report</button></form><div id="doctor-update-message" class="hidden mt-4 text-center text-sm"></div></div>
+            <div class="mt-6 pt-6 border-t"><button id="generate-pdf-button" disabled class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-gray-400 cursor-not-allowed">Generate PDF (Payment Pending)</button></div>
+        </div>
+
+        <!-- Manage Doctors View -->
+        <div id="manage-doctors-view" class="hidden bg-white p-8 rounded-xl shadow-lg">
+            <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800">Manage Doctors</h2><button onclick="showView('admin-dashboard-view', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back</button></div>
+            <div id="doctor-list-container" class="space-y-2 mb-6"></div>
+            <div class="mt-6 pt-6 border-t"><h3 class="text-lg font-semibold text-gray-700 mb-4">Create New Doctor</h3><form id="create-doctor-form" class="space-y-4"></form><div id="create-doctor-message" class="hidden mt-4 text-center text-sm"></div></div>
+        </div>
+    </div>
+    
+    <!-- Modal container -->
+    <div id="modal-container"></div>
+
+    <script>
+        // --- STATE MANAGEMENT ---
+        const API_URL = 'https://wetreat-22-go-production.up.railway.app'; 
+        let currentUser = null, allEMRs = [], allDoctors = [], currentEMRId = null, currentDoctorId = null;
+
+        // --- DOM ELEMENTS ---
+        const app = document.getElementById('app');
+        const modalContainer = document.getElementById('modal-container');
+        const allViews = ['welcome-view', 'login-view', 'patient-form-view', 'admin-dashboard-view', 'doctor-dashboard-view', 'emr-detail-view-admin', 'emr-detail-view-doctor', 'manage-doctors-view'];
+
+        // --- RENDER & NAVIGATION ---
+        function showView(viewId, refreshData = false) {
+            allViews.forEach(id => {
+                const view = document.getElementById(id);
+                if (view) view.classList.add('hidden');
+            });
+            const activeView = document.getElementById(viewId);
+            if (activeView) activeView.classList.remove('hidden');
+
+            if (refreshData) {
+                if (viewId === 'admin-dashboard-view') fetchAndDisplayAdminEMRs();
+                if (viewId === 'doctor-dashboard-view') fetchAndDisplayDoctorEMRs();
+            }
+        }
+
+        // --- DYNAMIC CONTENT BUILDERS ---
+        function renderDoctorProfilesForPatient() {
+            const container = document.getElementById('doctor-profiles-container');
+            if (!container) return;
+            if (allDoctors.length === 0) { container.innerHTML = `<p class="text-gray-500 text-sm">No doctors available.</p>`; return; }
+            container.innerHTML = allDoctors.map(doc => `
+                <div class="p-3 border rounded-lg bg-gray-50">
+                    <div class="flex items-center space-x-3"><img src="${doc.photo_url || 'https://placehold.co/48x48/E2E8F0/4A5568?text=Doc'}" class="w-12 h-12 rounded-full object-cover"><div class="flex-1"><p class="font-bold">${doc.full_name}</p><p class="text-sm text-gray-600">${doc.specialty || 'General Practice'}</p></div></div>
+                    <div class="text-xs text-gray-500 mt-2"><p><b>Expertise:</b> ${doc.expertise_area || 'N/A'}</p><p><b>Affiliation:</b> ${doc.current_affiliation || 'N/A'}</p></div>
+                </div>`).join('');
+        }
+
+        function displayDoctorListForAdmin() {
+            const container = document.getElementById('doctor-list-container');
+            if (!container) return;
+            container.innerHTML = allDoctors.map(doc => `
+                <div class="p-3 border rounded-lg bg-gray-50 flex justify-between items-center">
+                    <div class="flex items-center space-x-3"><img src="${doc.photo_url || 'https://placehold.co/48x48/E2E8F0/4A5568?text=Doc'}" class="w-12 h-12 rounded-full object-cover"><div><p class="font-bold">${doc.full_name}</p><p class="text-sm text-gray-600">${doc.specialty || 'N/A'}</p></div></div>
+                    <div><button onclick="openEditDoctorModal('${doc.user_id}')" class="text-sm text-blue-600 hover:underline">Edit</button><button onclick="handleDeleteDoctor('${doc.user_id}')" class="ml-4 text-sm text-red-600 hover:underline">Delete</button></div>
+                </div>`).join('');
         }
 
         function addDocumentRow() {
@@ -126,52 +171,7 @@
             container.appendChild(row);
         }
 
-        function renderDoctorProfilesForPatient() {
-            const container = document.getElementById('doctor-profiles-container');
-            if (allDoctors.length === 0) { container.innerHTML = `<p class="text-gray-500 text-sm">No doctors available.</p>`; return; }
-            container.innerHTML = allDoctors.map(doc => `
-                <div class="p-3 border rounded-lg bg-gray-50">
-                    <div class="flex items-center space-x-3"><img src="${doc.photo_url || 'https://placehold.co/48x48/E2E8F0/4A5568?text=Doc'}" class="w-12 h-12 rounded-full object-cover"><div class="flex-1"><p class="font-bold">${doc.full_name}</p><p class="text-sm text-gray-600">${doc.specialty || 'General Practice'}</p></div></div>
-                    <div class="text-xs text-gray-500 mt-2"><p><b>Expertise:</b> ${doc.expertise_area || 'N/A'}</p><p><b>Affiliation:</b> ${doc.current_affiliation || 'N/A'}</p></div>
-                </div>`).join('');
-        }
-
-        function renderManageDoctors() {
-            app.innerHTML = `<div class="bg-white p-8 rounded-xl shadow-lg"><div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800">Manage Doctors</h2><button onclick="renderView('adminDashboard', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back</button></div><div id="doctor-list-container" class="space-y-2 mb-6"></div><div class="mt-6 pt-6 border-t"><h3 class="text-lg font-semibold text-gray-700 mb-4">Create New Doctor</h3><form id="create-doctor-form" class="space-y-4"></form><div id="create-doctor-message" class="hidden mt-4 text-center text-sm"></div></div></div>`;
-            const form = document.getElementById('create-doctor-form');
-            form.innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div><label class="block text-sm font-medium">Full Name*</label><input type="text" name="fullName" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                    <div><label class="block text-sm font-medium">Email*</label><input type="email" name="email" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                    <div><label class="block text-sm font-medium">Password*</label><input type="password" name="password" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                    <div><label class="block text-sm font-medium">Photo URL</label><input type="text" name="photoUrl" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                    <div><label class="block text-sm font-medium">Specialty</label><input type="text" name="specialty" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                    <div><label class="block text-sm font-medium">Area of Expertise</label><input type="text" name="expertiseArea" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                    <div><label class="block text-sm font-medium">Current Affiliation</label><input type="text" name="currentAffiliation" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                    <div><label class="block text-sm font-medium">LinkedIn Profile</label><input type="text" name="linkedinUrl" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                </div>
-                <fieldset class="border p-4 rounded-md"><legend class="text-sm font-medium px-1">Consultation Fees (€)</legend><div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div><label class="block text-xs">Office</label><input type="number" step="0.01" name="feeOffice" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                    <div><label class="block text-xs">Home</label><input type="number" step="0.01" name="feeHome" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                    <div><label class="block text-xs">Video</label><input type="number" step="0.01" name="feeVideo" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                    <div><label class="block text-xs">Phone</label><input type="number" step="0.01" name="feePhone" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                    <div><label class="block text-xs">Review</label><input type="number" step="0.01" name="feeReview" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                </div></fieldset>
-                <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-green-600 hover:bg-green-700">Create Doctor</button>
-            `;
-            form.addEventListener('submit', handleCreateDoctor);
-            displayDoctorListForAdmin();
-        }
-
-        function displayDoctorListForAdmin() {
-            const container = document.getElementById('doctor-list-container');
-            container.innerHTML = allDoctors.map(doc => `
-                <div class="p-3 border rounded-lg bg-gray-50 flex justify-between items-center">
-                    <div class="flex items-center space-x-3"><img src="${doc.photo_url || 'https://placehold.co/48x48/E2E8F0/4A5568?text=Doc'}" class="w-12 h-12 rounded-full object-cover"><div><p class="font-bold">${doc.full_name}</p><p class="text-sm text-gray-600">${doc.specialty || 'N/A'}</p></div></div>
-                    <div><button onclick="openEditDoctorModal('${doc.user_id}')" class="text-sm text-blue-600 hover:underline">Edit</button><button onclick="handleDeleteDoctor('${doc.user_id}')" class="ml-4 text-sm text-red-600 hover:underline">Delete</button></div>
-                </div>`).join('');
-        }
-
+        // --- MODAL LOGIC ---
         function openEditDoctorModal(userId) {
             currentDoctorId = userId;
             const doctor = allDoctors.find(d => d.user_id === userId);
@@ -186,12 +186,14 @@
             `;
             const form = document.getElementById('edit-doctor-form');
             form.innerHTML = `
-                <div><label class="block text-sm font-medium">Full Name*</label><input type="text" name="fullName" required value="${doctor.full_name || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                <div><label class="block text-sm font-medium">Photo URL</label><input type="text" name="photoUrl" value="${doctor.photo_url || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                <div><label class="block text-sm font-medium">Specialty</label><input type="text" name="specialty" value="${doctor.specialty || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                <div><label class="block text-sm font-medium">Area of Expertise</label><input type="text" name="expertiseArea" value="${doctor.expertise_area || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                <div><label class="block text-sm font-medium">Current Affiliation</label><input type="text" name="currentAffiliation" value="${doctor.current_affiliation || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-                <div><label class="block text-sm font-medium">LinkedIn Profile</label><input type="text" name="linkedinUrl" value="${doctor.linkedin_url || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label class="block text-sm font-medium">Full Name*</label><input type="text" name="fullName" required value="${doctor.full_name || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">Photo URL</label><input type="text" name="photoUrl" value="${doctor.photo_url || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">Specialty</label><input type="text" name="specialty" value="${doctor.specialty || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">Area of Expertise</label><input type="text" name="expertiseArea" value="${doctor.expertise_area || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">Current Affiliation</label><input type="text" name="currentAffiliation" value="${doctor.current_affiliation || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">LinkedIn Profile</label><input type="text" name="linkedinUrl" value="${doctor.linkedin_url || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                </div>
                 <fieldset class="border p-4 rounded-md"><legend class="text-sm font-medium px-1">Consultation Fees (€)</legend><div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div><label class="block text-xs">Office</label><input type="number" step="0.01" name="feeOffice" value="${doctor.fee_office || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
                     <div><label class="block text-xs">Home</label><input type="number" step="0.01" name="feeHome" value="${doctor.fee_home || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
@@ -210,7 +212,7 @@
             modalContainer.innerHTML = '';
         }
 
-        // --- API & EVENT HANDLERS ---
+        // --- API & EVENT HANDLers ---
         async function handleApiRequest(url, options, messageDiv) {
             try {
                 const response = await fetch(url, options);
@@ -240,8 +242,8 @@
                 }, errorDiv);
                 currentUser = data.user;
                 await fetchAllDoctors();
-                if (currentUser.role === 'admin') renderView('adminDashboard');
-                else if (currentUser.role === 'doctor') renderView('doctorDashboard');
+                if (currentUser.role === 'admin') showView('admin-dashboard-view');
+                else if (currentUser.role === 'doctor') showView('doctor-dashboard-view');
             } catch (error) { console.error('Login failed'); }
         }
 
@@ -256,16 +258,12 @@
             const docNames = form.elements['doc_name'];
             const docPasswords = form.elements['doc_password'];
 
-            if (docUrls.length === undefined) {
+            if (docUrls && docUrls.length === undefined) {
                 if(docUrls.value) documents.push({ url: docUrls.value, name: docNames.value, password: docPasswords.value });
-            } else {
+            } else if (docUrls) {
                 for (let i = 0; i < docUrls.length; i++) {
                     if (docUrls[i].value) {
-                        documents.push({
-                            url: docUrls[i].value,
-                            name: docNames[i].value,
-                            password: docPasswords[i].value
-                        });
+                        documents.push({ url: docUrls[i].value, name: docNames[i].value, password: docPasswords[i].value });
                     }
                 }
             }
@@ -293,10 +291,8 @@
             const form = event.target;
             const messageDiv = document.getElementById('create-doctor-message');
             messageDiv.classList.add('hidden');
-
             const doctorData = {
-                email: form.elements.email.value,
-                password: form.elements.password.value,
+                email: form.elements.email.value, password: form.elements.password.value,
                 profile: {
                     fullName: form.elements.fullName.value, photoUrl: form.elements.photoUrl.value,
                     specialty: form.elements.specialty.value, expertiseArea: form.elements.expertiseArea.value,
@@ -306,7 +302,6 @@
                     feeReview: form.elements.feeReview.value
                 }
             };
-
             try {
                 const result = await handleApiRequest(`${API_URL}/api/users/doctor`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(doctorData)
@@ -360,6 +355,7 @@
         
         async function fetchAndDisplayAdminEMRs() {
             const container = document.getElementById('emr-list-container');
+            if(!container) return;
             container.innerHTML = '<p>Loading EMRs...</p>';
             try {
                 const response = await fetch(`${API_URL}/api/emrs?userId=${currentUser.id}&userRole=${currentUser.role}`);
@@ -378,6 +374,7 @@
 
         async function fetchAndDisplayDoctorEMRs() {
             const container = document.getElementById('doctor-emr-list-container');
+            if(!container) return;
             container.innerHTML = '<p>Loading assigned EMRs...</p>';
             try {
                 const response = await fetch(`${API_URL}/api/emrs?userId=${currentUser.id}&userRole=${currentUser.role}`);
