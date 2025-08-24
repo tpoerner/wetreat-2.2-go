@@ -120,12 +120,19 @@
             if (post[viewName]) post[viewName]();
         }
 
-        // --- PATIENT FORM ---
+        // --- PATIENT FORM --- (updated header with Instructions button) ---
         function renderPatientForm() {
             const view = `
                 <div class="bg-white p-8 rounded-xl shadow-lg">
                     <img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" alt="WeTreat Logo" class="mx-auto w-24 h-24 rounded-full mb-4 object-cover">
                     <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">New Consultation Request</h2>
+                                 </div>
+                                <button type="button"
+                                onclick="openPatientInstructionsModal()"
+                                class="text-sm px-3 py-2 rounded-md border bg-gray-50 hover:bg-gray-100">
+                                ℹ Instructions
+                                </button
+                                </div>
                     <form id="patient-form" class="space-y-6"></form>
                     <div id="patient-form-message" class="hidden mt-4 text-center text-sm"></div>
                     <button onclick="renderView('welcome')" class="mt-6 w-full text-center text-blue-600 hover:underline text-sm">&larr; Back to Welcome</button>
