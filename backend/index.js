@@ -259,10 +259,11 @@ app.get('/api/emrs/:id/generate-pdf', async (req, res) => {
         
         let logoBuffer = null;
         try {
+            // Attempt to fetch the logo. If it fails, logoBuffer will remain null.
             logoBuffer = await fetchImage('https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png');
         } catch (imageError) {
             console.error("Failed to fetch logo image:", imageError);
-            // Continue execution without the logo
+            // This allows the rest of the code to run without crashing.
         }
 
         const doc = new PDFDocument({ margin: 50 });
