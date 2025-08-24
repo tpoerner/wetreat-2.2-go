@@ -29,7 +29,7 @@
     <script>
         // --- STATE MANAGEMENT ---
         const API_URL = 'https://wetreat-22-go-production.up.railway.app'; 
-        let currentUser = null, allEMRs = [], allDoctors = [], currentEMRId = null, currentDoctorId = null;
+        let currentUser = null, allEMRs = [], allDoctors = [], currentEMRId = null, currentEMR = null, currentDoctorId = null;
         const app = document.getElementById('app');
         const modalContainer = document.getElementById('modal-container');
 
@@ -446,7 +446,7 @@
                     <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800">Consultation Details</h2><button onclick="renderView('doctorDashboard', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back</button></div>
                     <div id="emr-detail-content-doctor" class="space-y-4"></div>
                     <div id="doctor-actions-section" class="mt-6 pt-6 border-t"><h3 class="text-lg font-semibold text-gray-700">Section #2: Your Report</h3><form id="doctor-update-form" class="space-y-4 mt-4"></form><div id="doctor-update-message" class="hidden mt-4 text-center text-sm"></div></div>
-                    <div class="mt-6 pt-6 border-t"><button id="generate-pdf-button" disabled class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-gray-400 cursor-not-allowed">Generate PDF (Payment Pending)</button></div>
+                    <div class="mt-6 pt-6 border-t"><button id="finalize-report-button" class="w-full flex justify-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">Finalize record and generate PDF report</button></div>
                 </div>`;
 
             const detailContainer = document.getElementById('emr-detail-content-doctor');
@@ -458,8 +458,8 @@
             detailContainer.innerHTML = `<div class="border-b pb-4"><h3 class="text-lg font-semibold text-gray-800">Patient Information</h3><p><strong class="font-medium text-gray-600">Name:</strong> ${emr.patient_name||'N/A'}</p><p><strong class="font-medium text-gray-600">Email:</strong> ${emr.patient_email||'N/A'}</p><p><strong class="font-medium text-gray-600">Date of Birth:</strong> ${emr.patient_dob?new Date(emr.patient_dob).toLocaleDateString():'N/A'}</p></div><div class="py-4"><h3 class="text-lg font-semibold text-gray-800">Medical Information</h3><p><strong class="font-medium text-gray-600">Symptoms:</strong></p><p class="pl-2">${emr.symptoms||'N/A'}</p><p class="mt-2"><strong class="font-medium text-gray-600">Medical History:</strong></p><p class="pl-2">${emr.medical_history||'N/A'}</p><p class="mt-2"><strong class="font-medium text-gray-600">Current Medication:</strong></p><p class="pl-2">${emr.current_medication||'N/A'}</p><p class="mt-2"><strong class="font-medium text-gray-600">Medical Documents:</strong></p><p class="pl-2">${documentsHtml}</p></div>`;
             
             const docForm = document.getElementById('doctor-update-form');
-            
-            // Render the form fields
+            const isReportComplete = emr.status === 'report_complete';
+
             docForm.innerHTML = `
                 <div><label for="doctor-diagnosis" class="block text-sm font-medium">Diagnosis</label><textarea id="doctor-diagnosis" name="doctorDiagnosis" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div>
                 <div><label for="doctor-report" class="block text-sm font-medium">Report & Findings</label><textarea id="doctor-report" name="doctorReport" rows="4" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div>
@@ -476,7 +476,7 @@
             `;
             
             // Set values and disable fields if the report is complete
-            if (emr.status === 'report_complete') {
+            if (isReportComplete) {
                 docForm.querySelectorAll('textarea, input[type="checkbox"]').forEach(el => {
                     el.disabled = true;
                 });
@@ -498,15 +498,41 @@
                 if (savedTypes.includes(checkbox.value)) checkbox.checked = true;
             });
 
-            const pdfButton = document.getElementById('generate-pdf-button');
-            pdfButton.disabled = false;
-            pdfButton.textContent = 'Generate PDF Report';
-            pdfButton.className = 'w-full flex justify-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700';
-
             docForm.addEventListener('submit', handleDoctorUpdate);
-            pdfButton.addEventListener('click', () => {
-                window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf`, '_blank');
-            });
+
+            // Corrected "Finalize" button logic
+            const finalizeButton = document.getElementById('finalize-report-button');
+            if (emr.status !== 'report_complete') {
+                finalizeButton.addEventListener('click', async () => {
+                    const updates = {
+                        doctorDiagnosis: document.getElementById('doctor-diagnosis').value,
+                        doctorReport: document.getElementById('doctor-report').value,
+                        doctorRecommendations: document.getElementById('doctor-recommendations').value,
+                        doctorPrivateNotes: document.getElementById('doctor-private-notes').value,
+                        consultationType: Array.from(document.querySelectorAll('input[name="consultationType"]:checked')).map(cb => cb.value),
+                        status: 'report_complete'
+                    };
+                    try {
+                        await handleApiRequest(`${API_URL}/api/emrs/${currentEMRId}`, {
+                            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'doctor', updates })
+                        });
+                        // Then trigger PDF download
+                        window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf`, '_blank');
+                        // Reload the view to show the finalized state
+                        renderView('doctorDashboard');
+                    } catch (error) {
+                        alert('Failed to finalize report. Please try again.');
+                    }
+                });
+            } else {
+                finalizeButton.disabled = false;
+                finalizeButton.textContent = 'Generate PDF Report';
+                finalizeButton.classList.replace('bg-green-600', 'bg-blue-600');
+                finalizeButton.classList.replace('hover:bg-green-700', 'hover:bg-blue-700');
+                finalizeButton.addEventListener('click', () => {
+                    window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf`, '_blank');
+                });
+            }
         }
 
         async function handleAdminUpdate(event) {
@@ -541,18 +567,12 @@
             document.querySelectorAll('input[name="consultationType"]:checked').forEach(checkbox => selectedTypes.push(checkbox.value));
             
             const updates = {
-                // Read-only patient data is sent back to preserve it
-                symptoms: emr.symptoms,
-                medicalHistory: emr.medical_history,
-                currentMedication: emr.current_medication,
-                medicalDocuments: emr.medical_documents,
-                // Editable doctor data is read from the form
                 doctorDiagnosis: document.getElementById('doctor-diagnosis').value,
                 doctorReport: document.getElementById('doctor-report').value,
                 doctorRecommendations: document.getElementById('doctor-recommendations').value,
                 doctorPrivateNotes: document.getElementById('doctor-private-notes').value,
                 consultationType: selectedTypes,
-                status: 'report_complete'
+                status: emr.status
             };
             try {
                 await handleApiRequest(`${API_URL}/api/emrs/${currentEMRId}`, {
@@ -560,7 +580,6 @@
                 });
                 messageDiv.textContent = 'Report saved successfully!';
                 messageDiv.className = 'mt-4 text-center text-sm text-green-600';
-                // Update the local EMR object to reflect the changes
                 const emrIndex = allEMRs.findIndex(emr => emr.id === currentEMRId);
                 if (emrIndex !== -1) {
                     allEMRs[emrIndex].doctor_diagnosis = updates.doctorDiagnosis;
@@ -568,7 +587,6 @@
                     allEMRs[emrIndex].doctor_recommendations = updates.doctorRecommendations;
                     allEMRs[emrIndex].doctor_private_notes = updates.doctorPrivateNotes;
                     allEMRs[emrIndex].consultation_type = JSON.stringify(updates.consultationType);
-                    allEMRs[emrIndex].status = updates.status;
                 }
             } catch (error) {
                 messageDiv.textContent = 'Failed to save report.';
