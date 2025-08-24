@@ -73,7 +73,7 @@
             doctorDashboard: `
                 <div class="bg-white p-8 rounded-xl shadow-lg">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-gray-800">Doctor Dashboard</h2>
+                        <h2 class="text-2xl font-bold text-gray-800">Assigned Consultations</h2>
                         <button onclick="logout()" class="text-sm font-semibold text-red-600 hover:text-red-800">Logout</button>
                     </div>
                     <div id="doctor-emr-list-container" class="space-y-4"></div>
@@ -112,18 +112,17 @@
                         <div><label class="block text-sm font-medium">Password</label><input type="password" name="password" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
                     </div>
                 </fieldset>
-                <fieldset class="border p-4 rounded-md"><legend class="text-lg font-semibold px-2">Personal & Medical</legend>
+                <fieldset class="border p-4 rounded-md"><legend class="text-lg font-semibold px-2">Personal Data</legend>
                     <div><label class="block text-sm font-medium">Full Name</label><input type="text" name="name" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
                     <div><label class="block text-sm font-medium">Date of Birth</label><input type="date" name="dob" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                </fieldset>
+                <fieldset class="border p-4 rounded-md"><legend class="text-lg font-semibold px-2">Medical Data</legend>
                     <div><label class="block text-sm font-medium">Symptoms</label><textarea name="symptoms" rows="3" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div>
                     <div><label class="block text-sm font-medium">Medical History</label><textarea name="medicalHistory" rows="3" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div>
                     <div><label class="block text-sm font-medium">Current Medication</label><textarea name="medication" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div>
+                    <div class="pt-4"><h4 class="text-md font-semibold text-gray-700">Medical Documents & Imaging</h4><div id="medical-documents-container" class="space-y-2 mt-2"></div><button type="button" onclick="addDocumentRow()" class="text-sm text-blue-600 hover:underline mt-2">+ Add Document</button></div>
                 </fieldset>
-                <fieldset class="border p-4 rounded-md"><legend class="text-lg font-semibold px-2">Medical Documents</legend>
-                    <div id="medical-documents-container" class="space-y-2"></div>
-                    <button type="button" onclick="addDocumentRow()" class="text-sm text-blue-600 hover:underline mt-2">+ Add Document</button>
-                </fieldset>
-                <fieldset class="border p-4 rounded-md"><legend class="text-lg font-semibold px-2">Doctor Preferences</legend>
+                <fieldset class="border p-4 rounded-md"><legend class="text-lg font-semibold px-2">Consulting Physicians</legend>
                     <div id="doctor-profiles-container" class="my-2 p-2 border rounded-md max-h-60 overflow-y-auto space-y-3"></div>
                     <div><label class="block text-sm font-medium">Notes</label><textarea name="notes" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md" placeholder="Mention preferred doctor or scheduling needs here."></textarea></div>
                 </fieldset>
@@ -137,8 +136,8 @@
         function addDocumentRow() {
             const container = document.getElementById('medical-documents-container');
             const row = document.createElement('div');
-            row.className = 'grid grid-cols-1 md:grid-cols-4 gap-2 items-center';
-            row.innerHTML = `<input type="text" placeholder="URL" class="md:col-span-2 px-2 py-1 border rounded-md" name="doc_url"><select class="px-2 py-1 border rounded-md" name="doc_name"><option>Discharge Letter</option><option>Operation Report</option><option>Echo Report</option><option>CT Scan Report</option><option>MRI Report</option><option>Imaging (DICOM)</option><option>Other</option></select><input type="text" placeholder="Password (optional)" class="px-2 py-1 border rounded-md" name="doc_password">`;
+            row.className = 'grid grid-cols-1 md:grid-cols-3 gap-2 items-center';
+            row.innerHTML = `<input type="text" placeholder="URL to PDF or DICOM viewer" class="md:col-span-2 px-2 py-1 border rounded-md" name="doc_url"><input type="text" placeholder="Short description" class="px-2 py-1 border rounded-md" name="doc_name"><input type="text" placeholder="Password (optional)" class="px-2 py-1 border rounded-md" name="doc_password">`;
             container.appendChild(row);
         }
 
