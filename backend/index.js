@@ -37,11 +37,11 @@ async function setupDatabase() {
         
         // Drop tables for development to apply schema changes. 
         // IMPORTANT: Remove this block once you are in production with real data.
-        console.log("Dropping tables to apply new schema...");
-        await pool.query(`DROP TABLE IF EXISTS emrs CASCADE;`);
-        await pool.query(`DROP TABLE IF EXISTS doctor_profiles CASCADE;`);
-        await pool.query(`DROP TABLE IF EXISTS users CASCADE;`);
-        console.log("Tables dropped.");
+    //    console.log("Dropping tables to apply new schema...");
+      //  await pool.query(`DROP TABLE IF EXISTS emrs CASCADE;`);
+      //  await pool.query(`DROP TABLE IF EXISTS doctor_profiles CASCADE;`);
+     //   await pool.query(`DROP TABLE IF EXISTS users CASCADE;`);
+     //   console.log("Tables dropped.");
 
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
