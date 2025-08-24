@@ -22,7 +22,7 @@
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
 
     <div id="app" class="w-full max-w-3xl mx-auto">
-        <!-- Views will be rendered here by JavaScript -->
+        <!-- All views are dynamically rendered here -->
     </div>
     
     <!-- Modal container -->
@@ -59,14 +59,29 @@
                     <div id="login-error" class="hidden mt-4 text-center text-sm text-red-600"></div>
                     <button onclick="renderView('welcome')" class="mt-6 w-full text-center text-blue-600 hover:underline text-sm">&larr; Back</button>
                 </div>`,
-            patientForm: `...`,
-            adminDashboard: `...`,
-            doctorDashboard: `...`,
-            manageDoctors: `...`,
+            adminDashboard: `
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
+                        <div class="flex space-x-4">
+                            <button onclick="renderView('manageDoctors')" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Manage Doctors</button>
+                            <button onclick="logout()" class="text-sm font-semibold text-red-600 hover:text-red-800">Logout</button>
+                        </div>
+                    </div>
+                    <div id="emr-list-container" class="space-y-4"></div>
+                </div>`,
+            doctorDashboard: `
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Doctor Dashboard</h2>
+                        <button onclick="logout()" class="text-sm font-semibold text-red-600 hover:text-red-800">Logout</button>
+                    </div>
+                    <div id="doctor-emr-list-container" class="space-y-4"></div>
+                </div>`
         };
 
         // --- RENDER & NAVIGATION ---
-        function renderView(viewName, data = null) {
+        function renderView(viewName) {
             app.innerHTML = templates[viewName] || '<p>Loading...</p>';
             const postRenderActions = {
                 login: () => document.getElementById('login-form').addEventListener('submit', handleLogin),
@@ -80,13 +95,14 @@
 
         // --- DYNAMIC VIEW BUILDERS ---
         function renderPatientForm() {
-            app.innerHTML = `
+            const view = `
                 <div class="bg-white p-8 rounded-xl shadow-lg">
                     <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">New Consultation Request</h2>
                     <form id="patient-form" class="space-y-6"></form>
                     <div id="patient-form-message" class="hidden mt-4 text-center text-sm"></div>
                     <button onclick="renderView('welcome')" class="mt-6 w-full text-center text-blue-600 hover:underline text-sm">&larr; Back to Welcome</button>
                 </div>`;
+            app.innerHTML = view;
             
             const form = document.getElementById('patient-form');
             form.innerHTML = `
@@ -242,13 +258,8 @@
                 }, errorDiv);
                 currentUser = data.user;
                 await fetchAllDoctors();
-                if (currentUser.role === 'admin') {
-                    app.innerHTML = templates.adminDashboard;
-                    fetchAndDisplayAdminEMRs();
-                } else if (currentUser.role === 'doctor') {
-                    app.innerHTML = templates.doctorDashboard;
-                    fetchAndDisplayDoctorEMRs();
-                }
+                if (currentUser.role === 'admin') renderView('adminDashboard');
+                else if (currentUser.role === 'doctor') renderView('doctorDashboard');
             } catch (error) { console.error('Login failed'); }
         }
 
@@ -406,3 +417,4 @@
     </script>
 </body>
 </html>
+
