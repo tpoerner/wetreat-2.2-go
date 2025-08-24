@@ -306,7 +306,7 @@ app.get('/api/emrs/:id/generate-pdf', async (req, res) => {
 
     // Patient section
     doc.fontSize(14).text('Patient Data', { underline: true }).moveDown(0.5);
-    doc.fontSize(12)
+    doc.fontSize(12).font('Helvetica-Bold')
       .text(`Name: ${emr.patient_name || 'N/A'}`)
       .text(`Date of Birth: ${emr.patient_dob ? new Date(emr.patient_dob).toLocaleDateString() : 'N/A'}`)
       .moveDown(1);
