@@ -165,6 +165,7 @@
 
         function addDocumentRow() {
             const container = document.getElementById('medical-documents-container');
+            if (!container) return;
             const row = document.createElement('div');
             row.className = 'grid grid-cols-1 md:grid-cols-4 gap-2 items-center';
             row.innerHTML = `<input type="text" placeholder="URL" class="md:col-span-2 px-2 py-1 border rounded-md" name="doc_url"><select class="px-2 py-1 border rounded-md" name="doc_name"><option>Discharge Letter</option><option>Operation Report</option><option>Echo Report</option><option>CT Scan Report</option><option>MRI Report</option><option>Imaging (DICOM)</option><option>Other</option></select><input type="text" placeholder="Password (optional)" class="px-2 py-1 border rounded-md" name="doc_password">`;
@@ -212,7 +213,7 @@
             modalContainer.innerHTML = '';
         }
 
-        // --- API & EVENT HANDLers ---
+        // --- API & EVENT HANDLERS ---
         async function handleApiRequest(url, options, messageDiv) {
             try {
                 const response = await fetch(url, options);
@@ -391,13 +392,20 @@
             } catch (error) { container.innerHTML = `<p class="text-red-500">${error.message}</p>`; }
         }
         
-        // --- INITIAL LOAD ---
-        async function initializeApp() {
-            await fetchAllDoctors();
-            renderView('welcome');
-        }
+        // --- INITIAL LOAD & EVENT LISTENERS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Attach listeners to static elements that are always present
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            document.getElementById('patient-form').addEventListener('submit', handlePatientFormSubmit);
+            document.getElementById('create-doctor-form').addEventListener('submit', handleCreateDoctor);
 
-        initializeApp();
+            async function initializeApp() {
+                await fetchAllDoctors();
+                showView('welcome-view');
+            }
+
+            initializeApp();
+        });
     </script>
 </body>
 </html>
