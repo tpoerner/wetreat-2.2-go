@@ -1,4 +1,6 @@
 // backend/index.js
+// This version adds a 'diagnosis' field and includes all patient data in the doctor's view and final PDF.
+
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -32,7 +34,12 @@ async function setupDatabase() {
     try {
         await pool.query('SELECT NOW()');
         console.log("Connected to PostgreSQL database successfully.");
+        
         console.log("Verifying database schema...");
+
+        // Ensure the doctor_diagnosis column exists
+        await pool.query(`ALTER TABLE emrs ADD COLUMN IF NOT EXISTS doctor_diagnosis TEXT;`);
+
 
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
@@ -43,7 +50,7 @@ async function setupDatabase() {
                 created_at TIMESTAMPTZ DEFAULT NOW()
             );
         `);
-
+        
         await pool.query(`
             CREATE TABLE IF NOT EXISTS doctor_profiles (
                 id UUID PRIMARY KEY,
@@ -88,6 +95,7 @@ async function setupDatabase() {
             );
         `);
         console.log("Tables verified successfully.");
+        
     } catch (err) {
         console.error('Database connection or setup error', err);
         process.exit(1);
@@ -269,12 +277,24 @@ app.get('/api/emrs/:id/generate-pdf', async (req, res) => {
 
         doc.fontSize(12).font('Helvetica-Bold').text('Symptoms:').font('Helvetica').text(emr.symptoms || 'N/A').moveDown(1);
         doc.fontSize(12).font('Helvetica-Bold').text('Medical History:').font('Helvetica').text(emr.medical_history || 'N/A').moveDown(1);
-        doc.fontSize(12).font('Helvetica-Bold').text('Current Medication:').font('Helvetica').text(emr.current_medication || 'N/A').moveDown(1.5);
+        doc.fontSize(12).font('Helvetica-Bold').text('Current Medication:').font('Helvetica').text(emr.current_medication || 'N/A').moveDown(1);
+
+        if (emr.medical_documents && emr.medical_documents.length > 0) {
+            doc.fontSize(12).font('Helvetica-Bold').text('Medical Documents:').font('Helvetica').moveDown(0.5);
+            emr.medical_documents.forEach(docItem => {
+                doc.text(`- ${docItem.name || 'N/A'}: ${docItem.url || 'N/A'} (Password: ${docItem.password || 'N/A'})`).moveDown(0.2);
+            });
+            doc.moveDown(1.5);
+        } else {
+            doc.fontSize(12).font('Helvetica-Bold').text('Medical Documents:').font('Helvetica').text('N/A').moveDown(1.5);
+        }
 
         doc.fontSize(14).text("Physician's Report", { underline: true }).moveDown(1);
         doc.fontSize(12).font('Helvetica-Bold').text('Diagnosis:').font('Helvetica').text(emr.doctor_diagnosis || 'N/A').moveDown(1);
         doc.fontSize(12).font('Helvetica-Bold').text('Report & Findings:').font('Helvetica').text(emr.doctor_report || 'N/A').moveDown(1);
-        doc.fontSize(12).font('Helvetica-Bold').text('Recommendations:').font('Helvetica').text(emr.doctor_recommendations || 'N/A').moveDown(4);
+        doc.fontSize(12).font('Helvetica-Bold').text('Recommendations:').font('Helvetica').text(emr.doctor_recommendations || 'N/A').moveDown(1);
+        doc.fontSize(12).font('Helvetica-Bold').text('Consultation Type(s):').font('Helvetica').text(emr.consultation_type ? JSON.parse(emr.consultation_type).join(', ') : 'N/A').moveDown(4);
+
 
         doc.fontSize(10).text(`Report generated on: ${new Date().toLocaleString()}`, { align: 'left' });
         doc.moveDown(1);
