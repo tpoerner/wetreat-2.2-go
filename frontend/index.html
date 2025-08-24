@@ -418,7 +418,7 @@
                 <div class="bg-white p-8 rounded-xl shadow-lg">
                     <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800">Consultation Details</h2><button onclick="renderView('adminDashboard', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back</button></div>
                     <div id="emr-detail-content-admin" class="space-y-4"></div>
-                    <div id="admin-actions-section" class="mt-6 pt-6 border-t"><h3 class="text-lg font-semibold text-gray-700">Admin Actions</h3><form id="admin-update-form" class="space-y-4 mt-4"><div><label for="assign-doctor" class="block text-sm font-medium">Assign Doctor</label><select id="assign-doctor" name="assignedDoctorId" class="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"></select></div><div class="flex items-center"><input id="payment-confirmed" name="isPaymentConfirmed" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="payment-confirmed" class="ml-2 block text-sm">Payment Confirmed</label></div><button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save Changes</button></form><div id="admin-update-message" class="hidden mt-4 text-center text-sm"></div></div>
+                    <div id="admin-actions-section" class="mt-6 pt-6 border-t"><h3 class="text-lg font-semibold text-gray-700">Admin Actions</h3><form id="admin-update-form" class="space-y-4 mt-4"><div><label for="assign-doctor" class="block text-sm font-medium">Assign Doctor</label><select id="assign-doctor" name="assignedDoctorId" class="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"></select></div><button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save Changes</button></form><div id="admin-update-message" class="hidden mt-4 text-center text-sm"></div></div>
                 </div>`;
 
             const detailContainer = document.getElementById('emr-detail-content-admin');
@@ -433,8 +433,6 @@
                 if (emr.assigned_doctor_id === doc.user_id) option.selected = true;
                 doctorSelect.appendChild(option);
             });
-
-            document.getElementById('payment-confirmed').checked = emr.is_payment_confirmed;
             document.getElementById('admin-update-form').addEventListener('submit', handleAdminUpdate);
         }
         
@@ -501,24 +499,13 @@
             });
 
             const pdfButton = document.getElementById('generate-pdf-button');
-            if (emr.is_payment_confirmed) {
-                pdfButton.disabled = false;
-                pdfButton.textContent = 'Generate PDF Report';
-                pdfButton.classList.replace('bg-gray-400', 'bg-green-600');
-                pdfButton.classList.replace('cursor-not-allowed', 'hover:bg-green-700');
-            } else {
-                 pdfButton.disabled = true;
-                 pdfButton.textContent = 'Generate PDF (Payment Pending)';
-                 pdfButton.className = 'w-full flex justify-center py-2 px-4 border rounded-md text-white bg-gray-400 cursor-not-allowed';
-            }
+            pdfButton.disabled = false;
+            pdfButton.textContent = 'Generate PDF Report';
+            pdfButton.className = 'w-full flex justify-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700';
+
             docForm.addEventListener('submit', handleDoctorUpdate);
             pdfButton.addEventListener('click', () => {
-                // Ensure payment is confirmed before generating
-                if (emr.is_payment_confirmed) {
-                    window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf`, '_blank');
-                } else {
-                    alert('Payment must be confirmed by an admin to generate the PDF.');
-                }
+                window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf`, '_blank');
             });
         }
 
@@ -528,7 +515,6 @@
             messageDiv.classList.add('hidden');
             const updates = {
                 assignedDoctorId: document.getElementById('assign-doctor').value || null,
-                isPaymentConfirmed: document.getElementById('payment-confirmed').checked,
                 status: document.getElementById('assign-doctor').value ? 'assigned' : 'submitted_by_patient'
             };
             try {
