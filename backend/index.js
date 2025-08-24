@@ -1,6 +1,4 @@
 // backend/index.js
-// This version adds a 'diagnosis' field and includes all patient data in the doctor's view and final PDF.
-
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -256,8 +254,7 @@ app.get('/api/emrs/:id/generate-pdf', async (req, res) => {
         const emrResult = await pool.query(`SELECT e.*, dp.full_name as doctor_name FROM emrs e LEFT JOIN doctor_profiles dp ON e.assigned_doctor_id = dp.user_id WHERE e.id = $1`, [req.params.id]);
         const emr = emrResult.rows[0];
         if (!emr) return res.status(404).json({ message: 'EMR not found.' });
-        if (!emr.is_payment_confirmed) return res.status(403).json({ message: 'Payment not confirmed.' });
-        
+
         let logoBuffer = null;
         try {
             // Attempt to fetch the logo. If it fails, logoBuffer will remain null.
