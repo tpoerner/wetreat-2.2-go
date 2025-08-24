@@ -81,7 +81,7 @@
         };
 
         // --- RENDER & NAVIGATION ---
-        function renderView(viewName, data = null) {
+        function renderView(viewName) {
             app.innerHTML = templates[viewName] || '<p>Loading...</p>';
             const postRenderActions = {
                 login: () => document.getElementById('login-form').addEventListener('submit', handleLogin),
@@ -435,6 +435,34 @@
             document.getElementById('payment-confirmed').checked = emr.is_payment_confirmed;
             document.getElementById('admin-update-form').addEventListener('submit', handleAdminUpdate);
         }
+        
+        function viewEMRDetailsForDoctor(emrId) {
+            currentEMRId = emrId;
+            const emr = allEMRs.find(e => e.id === emrId);
+            if (!emr) return;
+
+            app.innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800">Consultation Details</h2><button onclick="renderView('doctorDashboard', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back</button></div>
+                    <div id="emr-detail-content-doctor" class="space-y-4"></div>
+                    <div id="doctor-actions-section" class="mt-6 pt-6 border-t"><h3 class="text-lg font-semibold text-gray-700">Section #2: Your Report</h3><form id="doctor-update-form" class="space-y-4 mt-4"><div><label for="doctor-report" class="block text-sm font-medium">Report & Findings</label><textarea id="doctor-report" name="doctorReport" rows="4" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div><div><label for="doctor-recommendations" class="block text-sm font-medium">Recommendations</label><textarea id="doctor-recommendations" name="doctorRecommendations" rows="4" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div><div><label for="doctor-private-notes" class="block text-sm font-medium">Private Notes</label><textarea id="doctor-private-notes" name="doctorPrivateNotes" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div><button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save Report</button></form><div id="doctor-update-message" class="hidden mt-4 text-center text-sm"></div></div>
+                    <div class="mt-6 pt-6 border-t"><button id="generate-pdf-button" disabled class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-gray-400 cursor-not-allowed">Generate PDF (Payment Pending)</button></div>
+                </div>`;
+
+            const detailContainer = document.getElementById('emr-detail-content-doctor');
+            detailContainer.innerHTML = `<div class="border-b pb-4"><h3 class="text-lg font-semibold text-gray-800">Patient Information</h3><p><strong class="font-medium text-gray-600">Name:</strong> ${emr.patient_name||'N/A'}</p><p><strong class="font-medium text-gray-600">Symptoms:</strong></p><p class="pl-2">${emr.symptoms||'N/A'}</p></div>`;
+            document.getElementById('doctor-report').value = emr.doctor_report || '';
+            document.getElementById('doctor-recommendations').value = emr.doctor_recommendations || '';
+            document.getElementById('doctor-private-notes').value = emr.doctor_private_notes || '';
+            const pdfButton = document.getElementById('generate-pdf-button');
+            if (emr.is_payment_confirmed) {
+                pdfButton.disabled = false;
+                pdfButton.textContent = 'Generate PDF Report';
+                pdfButton.className = 'w-full flex justify-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700';
+            }
+            document.getElementById('doctor-update-form').addEventListener('submit', handleDoctorUpdate);
+            pdfButton.addEventListener('click', () => window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf`, '_blank'));
+        }
 
         async function handleAdminUpdate(event) {
             event.preventDefault();
@@ -453,6 +481,30 @@
                 messageDiv.className = 'mt-4 text-center text-sm text-green-600';
             } catch (error) {
                 messageDiv.textContent = 'Failed to save changes.';
+                messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+            } finally {
+                messageDiv.classList.remove('hidden');
+            }
+        }
+
+        async function handleDoctorUpdate(event) {
+            event.preventDefault();
+            const messageDiv = document.getElementById('doctor-update-message');
+            messageDiv.classList.add('hidden');
+            const updates = {
+                doctorReport: document.getElementById('doctor-report').value,
+                doctorRecommendations: document.getElementById('doctor-recommendations').value,
+                doctorPrivateNotes: document.getElementById('doctor-private-notes').value,
+                status: 'report_complete'
+            };
+            try {
+                await handleApiRequest(`${API_URL}/api/emrs/${currentEMRId}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'doctor', updates })
+                });
+                messageDiv.textContent = 'Report saved successfully!';
+                messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+            } catch (error) {
+                messageDiv.textContent = 'Failed to save report.';
                 messageDiv.className = 'mt-4 text-center text-sm text-red-600';
             } finally {
                 messageDiv.classList.remove('hidden');
