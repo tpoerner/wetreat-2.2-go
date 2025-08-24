@@ -46,7 +46,7 @@
                             <button onclick="renderView('patientForm')" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700">Patient</button>
                             <button onclick="renderView('login')" class="w-full bg-orange-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-orange-700">Consulting Physician</button>
                             <button onclick="renderView('login')" class="w-full bg-gray-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-700">Admin</button>
-                        </div>
+                    </div>
                     </div>
                 </div>`,
             login: `
@@ -519,12 +519,12 @@
             
             const selectedTypes = [];
             document.querySelectorAll('input[name="consultationType"]:checked').forEach(checkbox => selectedTypes.push(checkbox.value));
-
+            
             const updates = {
                 symptoms: document.getElementById('symptoms').value,
                 medicalHistory: document.getElementById('medicalHistory').value,
                 currentMedication: document.getElementById('medication').value,
-                medicalDocuments: [], // Rebuild this from the form if needed
+                medicalDocuments: [], // This is not being updated in the current form
                 doctorDiagnosis: document.getElementById('doctor-diagnosis').value,
                 doctorReport: document.getElementById('doctor-report').value,
                 doctorRecommendations: document.getElementById('doctor-recommendations').value,
@@ -538,6 +538,16 @@
                 });
                 messageDiv.textContent = 'Report saved successfully!';
                 messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+                // Update the local EMR object to reflect the changes
+                const emrIndex = allEMRs.findIndex(emr => emr.id === currentEMRId);
+                if (emrIndex !== -1) {
+                    allEMRs[emrIndex].doctor_diagnosis = updates.doctorDiagnosis;
+                    allEMRs[emrIndex].doctor_report = updates.doctorReport;
+                    allEMRs[emrIndex].doctor_recommendations = updates.doctorRecommendations;
+                    allEMRs[emrIndex].doctor_private_notes = updates.doctorPrivateNotes;
+                    allEMRs[emrIndex].consultation_type = JSON.stringify(updates.consultationType);
+                    allEMRs[emrIndex].status = updates.status;
+                }
             } catch (error) {
                 messageDiv.textContent = 'Failed to save report.';
                 messageDiv.className = 'mt-4 text-center text-sm text-red-600';
