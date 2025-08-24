@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>WeTreat Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .status-badge { padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
+        .status-submitted_by_patient { background-color: #f59e0b; color: white; }
+        .status-assigned { background-color: #d97706; color: white; }
+        .status-closed { background-color: #6b7280; color: white; }
+        .status-report_complete { background-color: #2563eb; color: white; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
+        .modal-content { max-height: 90vh; overflow-y: auto; }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div id="app" class="w-full max-w-3xl mx-auto"></div>
+    <div id="modal-container"></div>
+
+    <script>
+        // --- CONFIG / STATE ---
+        const API_URL = 'https://wetreat-22-go-production.up.railway.app'; // leave as-is per your note
+        let currentUser = null, allEMRs = [], allDoctors = [], currentEMRId = null, currentEMR = null, currentDoctorId = null;
+        const app = document.getElementById('app');
+        const modalContainer = document.getElementById('modal-container');
+
+        // --- HELPERS (NEW) ---
+        function ensureArray(val) {
+            if (!val) return [];
+            if (Array.isArray(val)) return val;
+            if (typeof val === 'string') {
+                try { const parsed = JSON.parse(val); return Array.isArray(parsed) ? parsed : []; }
+                catch { return []; }
+            }
+            return []; // object but not array
+        }
+        function isCompleteStatus(s) {
+            return ['report_complete', 'closed', 'finalized', 'complete', 'completed']
+                .includes((s || '').toLowerCase());
+        }
+
+        // --- VIEWS ---
+        const templates = {
+            welcome: `
+                <div class="bg-white p-8 rounded-xl shadow-lg text-center">
+                    <img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" alt="WeTreat Logo" class="mx-auto w-32 h-32 rounded-full mb-6 object-cover">
+                    <h1 class="text-3xl font-bold text-gray-800">Welcome to WeTreat</h1>
+                    <p class="text-gray-600 mt-2 mb-8">Your trusted online medical consultation platform.</p>
+                    <div class="space-y-4">
+                        <h2 class="text-lg font-semibold text-gray-700">Please select your role:</h2>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button onclick="renderView('patientForm')" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700">Patient</button>
+                            <button onclick="renderView('login')" class="w-full bg-orange-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-orange-700">Consulting Physician</button>
+                            <button onclick="renderView('login')" class="w-full bg-gray-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-700">Admin</button>
+                        </div>
+                    </div>
+                </div>`,
+            login: `
+                <div class="bg-white p-8 rounded-xl shadow-lg max-w-md mx-auto">
+                    <img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" alt="WeTreat Logo" class="mx-auto w-24 h-24 rounded-full mb-4 object-cover">
+                    <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Portal Login</h2>
+                    <form id="login-form" class="space-y-4">
+                        <div>
+                            <label for="email" class="block text-sm font-medium">Email</label>
+                            <input type="email" id="email" required class="mt-1 block w-full px-3 py-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label for="password" class="block text-sm font-medium">Password</label>
+                            <input type="password" id="password" required class="mt-1 block w-full px-3 py-2 border rounded-md">
+                        </div>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border rounded-md text-white bg-gray-700 hover:bg-gray-800">Login</button>
+                    </form>
+                    <div id="login-error" class="hidden mt-4 text-center text-sm text-red-600"></div>
+                    <button onclick="renderView('welcome')" class="mt-6 w-full text-center text-blue-600 hover:underline text-sm">&larr; Back</button>
+                </div>`,
+            adminDashboard: `
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center space-x-4">
+                            <img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" alt="WeTreat Logo" class="w-12 h-12 rounded-full object-cover">
+                            <h2 class="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
+                        </div>
+                        <div class="flex space-x-4">
+                            <button onclick="renderView('manageDoctors')" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Manage Doctors</button>
+                            <button onclick="logout()" class="text-sm font-semibold text-red-600 hover:text-red-800">Logout</button>
+                        </div>
+                    </div>
+                    <div id="emr-list-container" class="space-y-4"></div>
+                </div>`,
+            doctorDashboard: `
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center space-x-4">
+                            <img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" alt="WeTreat Logo" class="w-12 h-12 rounded-full object-cover">
+                            <h2 class="text-2xl font-bold text-gray-800">Assigned Consultations</h2>
+                        </div>
+                        <button onclick="logout()" class="text-sm font-semibold text-red-600 hover:text-red-800">Logout</button>
+                    </div>
+                    <div id="doctor-emr-list-container" class="space-y-4"></div>
+                </div>`
+        };
+
+        // --- RENDER & NAV ---
+        function renderView(viewName) {
+            app.innerHTML = templates[viewName] || '<p>Loading...</p>';
+            const post = {
+                login: () => document.getElementById('login-form').addEventListener('submit', handleLogin),
+                patientForm: renderPatientForm,
+                adminDashboard: fetchAndDisplayAdminEMRs,
+                doctorDashboard: fetchAndDisplayDoctorEMRs,
+                manageDoctors: renderManageDoctors
+            };
+            if (post[viewName]) post[viewName]();
+        }
+
+        // --- PATIENT FORM ---
+        function renderPatientForm() {
+            const view = `
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" alt="WeTreat Logo" class="mx-auto w-24 h-24 rounded-full mb-4 object-cover">
+                    <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">New Consultation Request</h2>
+                    <form id="patient-form" class="space-y-6"></form>
+                    <div id="patient-form-message" class="hidden mt-4 text-center text-sm"></div>
+                    <button onclick="renderView('welcome')" class="mt-6 w-full text-center text-blue-600 hover:underline text-sm">&larr; Back to Welcome</button>
+                </div>`;
+            app.innerHTML = view;
+
+            const form = document.getElementById('patient-form');
+            form.innerHTML = `
+                <fieldset class="border p-4 rounded-md">
+                    <legend class="text-lg font-semibold px-2">Account</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium">Email</label>
+                            <input type="email" name="email" required class="mt-1 block w-full px-3 py-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium">Password</label>
+                            <input type="password" name="password" required class="mt-1 block w-full px-3 py-2 border rounded-md">
+                        </div>
+                    </div>
+                </fieldset>
+                <fieldset class="border p-4 rounded-md">
+                    <legend class="text-lg font-semibold px-2">Personal Data</legend>
+                    <div>
+                        <label class="block text-sm font-medium">Full Name</label>
+                        <input type="text" name="name" required class="mt-1 block w-full px-3 py-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium">Date of Birth</label>
+                        <input type="date" name="dob" class="mt-1 block w-full px-3 py-2 border rounded-md">
+                    </div>
+                </fieldset>
+                <fieldset class="border p-4 rounded-md">
+                    <legend class="text-lg font-semibold px-2">Medical Data</legend>
+                    <div>
+                        <label class="block text-sm font-medium">Symptoms</label>
+                        <textarea name="symptoms" rows="3" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium">Medical History</label>
+                        <textarea name="medicalHistory" rows="3" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium">Current Medication</label>
+                        <textarea name="medication" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea>
+                    </div>
+                    <div class="pt-4">
+                        <h4 class="text-md font-semibold text-gray-700">Medical Documents & Imaging</h4>
+                        <div id="medical-documents-container" class="space-y-2 mt-2"></div>
+                        <button type="button" onclick="addDocumentRow()" class="text-sm text-blue-600 hover:underline mt-2">+ Add Document</button>
+                    </div>
+                </fieldset>
+                <fieldset class="border p-4 rounded-md">
+                    <legend class="text-lg font-semibold px-2">Consulting Physicians</legend>
+                    <div id="doctor-profiles-container" class="my-2 p-2 border rounded-md max-h-60 overflow-y-auto space-y-3"></div>
+                    <div>
+                        <label class="block text-sm font-medium">Notes</label>
+                        <textarea name="notes" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md" placeholder="Mention preferred doctor or scheduling needs here."></textarea>
+                    </div>
+                </fieldset>
+                <button type="submit" class="w-full flex justify-center py-3 px-4 mt-4 border rounded-md text-white bg-blue-600 hover:bg-blue-700">Submit for Review</button>
+            `;
+            form.addEventListener('submit', handlePatientFormSubmit);
+            renderDoctorProfilesForPatient();
+            addDocumentRow();
+        }
+
+        function addDocumentRow() {
+            const container = document.getElementById('medical-documents-container');
+            const row = document.createElement('div');
+            row.className = 'grid grid-cols-1 md:grid-cols-3 gap-2 items-center';
+            row.innerHTML = `
+                <input type="text" placeholder="URL to PDF or DICOM Web Viewer" class="md:col-span-2 px-2 py-1 border rounded-md" name="doc_url">
+                <input type="text" placeholder="Short description" class="px-2 py-1 border rounded-md" name="doc_name">
+                <input type="text" placeholder="Password (if needed)" class="px-2 py-1 border rounded-md" name="doc_password">`;
+            container.appendChild(row);
+        }
+
+        function renderDoctorProfilesForPatient() {
+            const container = document.getElementById('doctor-profiles-container');
+            if (allDoctors.length === 0) { container.innerHTML = `<p class="text-gray-500 text-sm">No doctors available.</p>`; return; }
+            container.innerHTML = allDoctors.map(doc => `
+                <div class="p-3 border rounded-lg bg-gray-50">
+                    <div class="flex items-center space-x-3">
+                        <img src="${doc.photo_url || 'https://placehold.co/48x48/E2E8F0/4A5568?text=Doc'}" class="w-12 h-12 rounded-full object-cover">
+                        <div>
+                            <p class="font-bold">${doc.full_name}</p>
+                            <p class="text-sm text-gray-600">${doc.specialty || 'General Practice'}</p>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2">
+                        <p><b>Expertise:</b> ${doc.expertise_area || 'N/A'}</p>
+                        <p><b>Affiliation:</b> ${doc.current_affiliation || 'N/A'}</p>
+                    </div>
+                </div>`).join('');
+        }
+
+        // --- ADMIN: MANAGE DOCTORS ---
+        function renderManageDoctors() {
+            app.innerHTML = `
+              <div class="bg-white p-8 rounded-xl shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                  <h2 class="text-2xl font-bold text-gray-800">Manage Doctors</h2>
+                  <button onclick="renderView('adminDashboard', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back</button>
+                </div>
+                <div id="doctor-list-container" class="space-y-2 mb-6"></div>
+                <div class="mt-6 pt-6 border-t">
+                  <h3 class="text-lg font-semibold text-gray-700 mb-4">Create New Doctor</h3>
+                  <form id="create-doctor-form" class="space-y-4"></form>
+                  <div id="create-doctor-message" class="hidden mt-4 text-center text-sm"></div>
+                </div>
+              </div>`;
+            const form = document.getElementById('create-doctor-form');
+            form.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label class="block text-sm font-medium">Full Name*</label><input type="text" name="fullName" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">Email*</label><input type="email" name="email" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">Password*</label><input type="password" name="password" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">Photo URL</label><input type="text" name="photoUrl" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">Specialty</label><input type="text" name="specialty" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">Area of Expertise</label><input type="text" name="expertiseArea" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">Current Affiliation</label><input type="text" name="currentAffiliation" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">LinkedIn Profile</label><input type="text" name="linkedinUrl" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                </div>
+                <fieldset class="border p-4 rounded-md">
+                  <legend class="text-sm font-medium px-1">Consultation Fees (€)</legend>
+                  <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div><label class="block text-xs">Office</label><input type="number" step="0.01" name="feeOffice" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-xs">Home</label><input type="number" step="0.01" name="feeHome" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-xs">Video</label><input type="number" step="0.01" name="feeVideo" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-xs">Phone</label><input type="number" step="0.01" name="feePhone" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-xs">Review</label><input type="number" step="0.01" name="feeReview" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                  </div>
+                </fieldset>
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-green-600 hover:bg-green-700">Create Doctor</button>
+            `;
+            form.addEventListener('submit', handleCreateDoctor);
+            displayDoctorListForAdmin();
+        }
+
+        function displayDoctorListForAdmin() {
+            const container = document.getElementById('doctor-list-container');
+            container.innerHTML = allDoctors.map(doc => `
+                <div class="p-3 border rounded-lg bg-gray-50 flex justify-between items-center">
+                    <div class="flex items-center space-x-3">
+                        <img src="${doc.photo_url || 'https://placehold.co/48x48/E2E8F0/4A5568?text=Doc'}" class="w-12 h-12 rounded-full object-cover">
+                        <div>
+                            <p class="font-bold">${doc.full_name}</p>
+                            <p class="text-sm text-gray-600">${doc.specialty || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <button onclick="openEditDoctorModal('${doc.user_id}')" class="text-sm text-blue-600 hover:underline">Edit</button>
+                        <button onclick="handleDeleteDoctor('${doc.user_id}')" class="ml-4 text-sm text-red-600 hover:underline">Delete</button>
+                    </div>
+                </div>`).join('');
+        }
+
+        function openEditDoctorModal(userId) {
+            currentDoctorId = userId;
+            const doctor = allDoctors.find(d => d.user_id === userId);
+            if (!doctor) return;
+            modalContainer.innerHTML = `
+                <div class="modal-overlay" onclick="closeEditDoctorModal(event)">
+                    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl modal-content">
+                        <h2 class="text-xl font-bold mb-4">Edit Doctor: ${doctor.full_name}</h2>
+                        <form id="edit-doctor-form" class="space-y-4"></form>
+                    </div>
+                </div>`;
+            const form = document.getElementById('edit-doctor-form');
+            form.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label class="block text-sm font-medium">Full Name*</label><input type="text" name="fullName" required value="${doctor.full_name || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">Photo URL</label><input type="text" name="photoUrl" value="${doctor.photo_url || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">Specialty</label><input type="text" name="specialty" value="${doctor.specialty || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">Area of Expertise</label><input type="text" name="expertiseArea" value="${doctor.expertise_area || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">Current Affiliation</label><input type="text" name="currentAffiliation" value="${doctor.current_affiliation || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-sm font-medium">LinkedIn Profile</label><input type="text" name="linkedinUrl" value="${doctor.linkedin_url || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                </div>
+                <fieldset class="border p-4 rounded-md">
+                  <legend class="text-sm font-medium px-1">Consultation Fees (€)</legend>
+                  <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div><label class="block text-xs">Office</label><input type="number" step="0.01" name="feeOffice" value="${doctor.fee_office || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-xs">Home</label><input type="number" step="0.01" name="feeHome" value="${doctor.fee_home || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-xs">Video</label><input type="number" step="0.01" name="feeVideo" value="${doctor.fee_video || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-xs">Phone</label><input type="number" step="0.01" name="feePhone" value="${doctor.fee_phone || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                    <div><label class="block text-xs">Review</label><input type="number" step="0.01" name="feeReview" value="${doctor.fee_review || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+                  </div>
+                </fieldset>
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save Changes</button>
+                <button type="button" onclick="closeEditDoctorModal()" class="w-full flex justify-center py-2 px-4 border rounded-md bg-gray-200">Cancel</button>
+            `;
+            form.addEventListener('submit', handleEditDoctor);
+        }
+        function closeEditDoctorModal(e){ if (e && e.target !== e.currentTarget) return; modalContainer.innerHTML=''; }
+
+        // --- API HELPERS ---
+        async function handleApiRequest(url, options, messageDiv) {
+            try {
+                const response = await fetch(url, options);
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'An error occurred.');
+                return result;
+            } catch (error) {
+                if (messageDiv) {
+                    messageDiv.textContent = error.message;
+                    messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+                    messageDiv.classList.remove('hidden');
+                }
+                throw error;
+            }
+        }
+
+        // --- AUTH / FORMS ---
+        async function handleLogin(event) {
+            event.preventDefault();
+            const form = event.target;
+            const errorDiv = document.getElementById('login-error');
+            errorDiv.classList.add('hidden');
+            try {
+                const data = await handleApiRequest(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: form.elements.email.value, password: form.elements.password.value })
+                }, errorDiv);
+                currentUser = data.user;
+                await fetchAllDoctors();
+                if (currentUser.role === 'admin') renderView('adminDashboard');
+                else if (currentUser.role === 'doctor') renderView('doctorDashboard');
+            } catch (error) { console.error('Login failed'); }
+        }
+
+        async function handlePatientFormSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const messageDiv = document.getElementById('patient-form-message');
+            messageDiv.classList.add('hidden');
+
+            const documents = [];
+            const docUrls = form.elements['doc_url'];
+            const docNames = form.elements['doc_name'];
+            const docPasswords = form.elements['doc_password'];
+
+            if (docUrls && docUrls.length === undefined) {
+                if(docUrls.value) documents.push({ url: docUrls.value, name: docNames.value, password: docPasswords.value });
+            } else if (docUrls) {
+                for (let i = 0; i < docUrls.length; i++) {
+                    if (docUrls[i].value) {
+                        documents.push({ url: docUrls[i].value, name: docNames[i].value, password: docPasswords[i].value });
+                    }
+                }
+            }
+
+            const formData = {
+                email: form.elements.email.value,
+                password: form.elements.password.value,
+                name: form.elements.name.value,
+                dob: form.elements.dob.value,
+                symptoms: form.elements.symptoms.value,
+                medicalHistory: form.elements.medicalHistory.value,
+                medication: form.elements.medication.value,
+                medicalDocuments: documents,
+                notes: form.elements.notes.value
+            };
+
+            try {
+                const result = await handleApiRequest(`${API_URL}/api/emr/submit`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData)
+                }, messageDiv);
+                messageDiv.textContent = result.message;
+                messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+                messageDiv.classList.remove('hidden');
+                form.reset();
+                addDocumentRow();
+            } catch (error) { console.error('Patient form submission failed'); }
+        }
+
+        async function handleCreateDoctor(event) {
+            event.preventDefault();
+            const form = event.target;
+            const messageDiv = document.getElementById('create-doctor-message');
+            messageDiv.classList.add('hidden');
+            const doctorData = {
+                email: form.elements.email.value, password: form.elements.password.value,
+                profile: {
+                    fullName: form.elements.fullName.value, photoUrl: form.elements.photoUrl.value,
+                    specialty: form.elements.specialty.value, expertiseArea: form.elements.expertiseArea.value,
+                    currentAffiliation: form.elements.currentAffiliation.value, linkedinUrl: form.elements.linkedinUrl.value,
+                    feeOffice: form.elements.feeOffice.value, feeHome: form.elements.feeHome.value,
+                    feeVideo: form.elements.feeVideo.value, feePhone: form.elements.feePhone.value,
+                    feeReview: form.elements.feeReview.value
+                }
+            };
+            try {
+                const result = await handleApiRequest(`${API_URL}/api/users/doctor`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(doctorData)
+                }, messageDiv);
+                messageDiv.textContent = result.message;
+                messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+                form.reset();
+                await fetchAllDoctors();
+                displayDoctorListForAdmin();
+            } catch (error) { console.error('Create doctor failed'); }
+        }
+
+        async function handleEditDoctor(event) {
+            event.preventDefault();
+            const form = event.target;
+            const profileData = {
+                fullName: form.elements.fullName.value, photoUrl: form.elements.photoUrl.value,
+                specialty: form.elements.specialty.value, expertiseArea: form.elements.expertiseArea.value,
+                currentAffiliation: form.elements.currentAffiliation.value, linkedinUrl: form.elements.linkedinUrl.value,
+                feeOffice: form.elements.feeOffice.value, feeHome: form.elements.feeHome.value,
+                feeVideo: form.elements.feeVideo.value, feePhone: form.elements.feePhone.value,
+                feeReview: form.elements.feeReview.value
+            };
+            try {
+                await handleApiRequest(`${API_URL}/api/doctor-profiles/${currentDoctorId}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(profileData)
+                });
+                closeEditDoctorModal();
+                await fetchAllDoctors();
+                displayDoctorListForAdmin();
+            } catch (error) { alert('Failed to update doctor.'); }
+        }
+
+        // --- DATA FETCHING ---
+        async function fetchAllDoctors() {
+            try {
+                const response = await fetch(`${API_URL}/api/doctors`);
+                if (!response.ok) throw new Error('Could not fetch doctors.');
+                allDoctors = await response.json();
+            } catch (error) { console.error(error); allDoctors = []; }
+        }
+
+        async function fetchAndDisplayAdminEMRs() {
+            const container = document.getElementById('emr-list-container');
+            if(!container) return;
+            container.innerHTML = '<p>Loading EMRs...</p>';
+            try {
+                const response = await fetch(`${API_URL}/api/emrs?userId=${currentUser.id}&userRole=${currentUser.role}`);
+                if (!response.ok) throw new Error('Failed to fetch EMRs.');
+                allEMRs = await response.json();
+                container.innerHTML = '';
+                if (allEMRs.length === 0) { container.innerHTML = '<p class="text-gray-500">No EMRs have been submitted yet.</p>'; return; }
+                allEMRs.forEach(emr => {
+                    const card = document.createElement('div');
+                    card.className = 'p-4 border rounded-lg bg-gray-50';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">${emr.patient_name || 'N/A'}</h3>
+                                <p class="text-sm text-gray-600">${emr.patient_email || ''}</p>
+                            </div>
+                            <span class="status-badge status-${emr.status}">${(emr.status || '').replace(/_/g,' ')}</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Submitted: ${emr.created_at ? new Date(emr.created_at).toLocaleString() : ''}</p>
+                        <button onclick="viewEMRDetailsForAdmin('${emr.id}')" class="mt-4 text-sm bg-gray-700 text-white py-2 px-3 rounded-md hover:bg-gray-800">View Details</button>`;
+                    container.appendChild(card);
+                });
+            } catch (error) { container.innerHTML = `<p class="text-red-500">${error.message}</p>`; }
+        }
+
+        async function fetchAndDisplayDoctorEMRs() {
+            const container = document.getElementById('doctor-emr-list-container');
+            if(!container) return;
+            container.innerHTML = '<p>Loading assigned EMRs...</p>';
+            try {
+                const response = await fetch(`${API_URL}/api/emrs?userId=${currentUser.id}&userRole=${currentUser.role}`);
+                if (!response.ok) throw new Error('Failed to fetch EMRs.');
+                allEMRs = await response.json();
+                container.innerHTML = '';
+                if (allEMRs.length === 0) { container.innerHTML = '<p class="text-gray-500">You have no assigned consultations.</p>'; return; }
+                allEMRs.forEach(emr => {
+                    const card = document.createElement('div');
+                    card.className = 'p-4 border rounded-lg bg-gray-50';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">${emr.patient_name || 'N/A'}</h3>
+                                <p class="text-sm text-gray-600">${emr.patient_email || ''}</p>
+                            </div>
+                            <span class="status-badge status-${emr.status}">${(emr.status || '').replace(/_/g,' ')}</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">Submitted: ${emr.created_at ? new Date(emr.created_at).toLocaleString() : ''}</p>
+                        <button onclick="viewEMRDetailsForDoctor('${emr.id}')" class="mt-4 text-sm bg-gray-700 text-white py-2 px-3 rounded-md hover:bg-gray-800">View Details</button>`;
+                    container.appendChild(card);
+                });
+            } catch (error) { container.innerHTML = `<p class="text-red-500">${error.message}</p>`; }
+        }
+
+        function viewEMRDetailsForAdmin(emrId) {
+            currentEMRId = emrId;
+            const emr = allEMRs.find(e => e.id === emrId);
+            if (!emr) return;
+
+            app.innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Consultation Details</h2>
+                        <button onclick="renderView('adminDashboard', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back</button>
+                    </div>
+                    <div id="emr-detail-content-admin" class="space-y-4"></div>
+                    <div id="admin-actions-section" class="mt-6 pt-6 border-t">
+                        <h3 class="text-lg font-semibold text-gray-700">Admin Actions</h3>
+                        <form id="admin-update-form" class="space-y-4 mt-4">
+                            <div>
+                                <label for="assign-doctor" class="block text-sm font-medium">Assign Doctor</label>
+                                <select id="assign-doctor" name="assignedDoctorId" class="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"></select>
+                            </div>
+                            <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save Changes</button>
+                        </form>
+                        <div id="admin-update-message" class="hidden mt-4 text-center text-sm"></div>
+                    </div>
+                </div>`;
+
+            const detailContainer = document.getElementById('emr-detail-content-admin');
+            detailContainer.innerHTML = `
+                <div class="border-b pb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Patient Information</h3>
+                    <p><strong class="font-medium text-gray-600">Name:</strong> ${emr.patient_name||'N/A'}</p>
+                    <p><strong class="font-medium text-gray-600">Email:</strong> ${emr.patient_email||'N/A'}</p>
+                    <p><strong class="font-medium text-gray-600">Date of Birth:</strong> ${emr.patient_dob?new Date(emr.patient_dob).toLocaleDateString():'N/A'}</p>
+                </div>
+                <div class="py-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Medical Information</h3>
+                    <p><strong class="font-medium text-gray-600">Symptoms:</strong></p>
+                    <p class="pl-2">${emr.symptoms||'N/A'}</p>
+                    <p class="mt-2"><strong class="font-medium text-gray-600">Medical History:</strong></p>
+                    <p class="pl-2">${emr.medical_history||'N/A'}</p>
+                    <p class="mt-2"><strong class="font-medium text-gray-600">Current Medication:</strong></p>
+                    <p class="pl-2">${emr.current_medication||'N/A'}</p>
+                </div>`;
+
+            const doctorSelect = document.getElementById('assign-doctor');
+            doctorSelect.innerHTML = '<option value="">-- Select a Doctor --</option>';
+            allDoctors.forEach(doc => {
+                const option = document.createElement('option');
+                option.value = doc.user_id;
+                option.textContent = doc.full_name;
+                if (emr.assigned_doctor_id === doc.user_id) option.selected = true;
+                doctorSelect.appendChild(option);
+            });
+            document.getElementById('admin-update-form').addEventListener('submit', handleAdminUpdate);
+        }
+
+        function viewEMRDetailsForDoctor(emrId) {
+            currentEMRId = emrId;
+            currentEMR = allEMRs.find(e => e.id === emrId);
+            if (!currentEMR) return;
+
+            app.innerHTML = `
+                <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Consultation Details</h2>
+                        <button onclick="renderView('doctorDashboard')" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back</button>
+                    </div>
+                    <div id="emr-detail-content-doctor" class="space-y-4"></div>
+                    <div id="doctor-actions-section" class="mt-6 pt-6 border-t">
+                        <h3 class="text-lg font-semibold text-gray-700">Section #2: Your Report</h3>
+                        <form id="doctor-form" class="space-y-4 mt-4"></form>
+                        <div id="doctor-form-message" class="hidden mt-4 text-center text-sm"></div>
+                    </div>
+                </div>`;
+
+            const detailContainer = document.getElementById('emr-detail-content-doctor');
+
+            // Documents (safe)
+            let documentsHtml = 'N/A';
+            const docs = ensureArray(currentEMR.medical_documents);
+            if (docs.length > 0) {
+                documentsHtml = docs.map(doc =>
+                    `<a href="${doc.url}" target="_blank" class="text-blue-600 hover:underline">${doc.name || 'Document'}</a> (Password: ${doc.password || 'N/A'})`
+                ).join('<br>');
+            }
+
+            detailContainer.innerHTML = `
+                <div class="border-b pb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Patient Information</h3>
+                    <p><strong class="font-medium text-gray-600">Name:</strong> ${currentEMR.patient_name || 'N/A'}</p>
+                    <p><strong class="font-medium text-gray-600">Email:</strong> ${currentEMR.patient_email || 'N/A'}</p>
+                    <p><strong class="font-medium text-gray-600">Date of Birth:</strong> ${currentEMR.patient_dob ? new Date(currentEMR.patient_dob).toLocaleDateString() : 'N/A'}</p>
+                </div>
+                <div class="py-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Medical Information</h3>
+                    <p><strong class="font-medium text-gray-600">Symptoms:</strong></p>
+                    <p class="pl-2">${currentEMR.symptoms || 'N/A'}</p>
+                    <p class="mt-2"><strong class="font-medium text-gray-600">Medical History:</strong></p>
+                    <p class="pl-2">${currentEMR.medical_history || 'N/A'}</p>
+                    <p class="mt-2"><strong class="font-medium text-gray-600">Current Medication:</strong></p>
+                    <p class="pl-2">${currentEMR.current_medication || 'N/A'}</p>
+                    <p class="mt-2"><strong class="font-medium text-gray-600">Medical Documents:</strong></p>
+                    <p class="pl-2">${documentsHtml}</p>
+                </div>`;
+
+            const docForm = document.getElementById('doctor-form');
+            const isReportComplete = isCompleteStatus(currentEMR.status);
+
+            // Add persistent PDF button (always available)
+            const actionsSection = document.getElementById('doctor-actions-section');
+            const pdfBar = document.createElement('div');
+            pdfBar.className = 'mt-4';
+            pdfBar.innerHTML = `
+                <button type="button" id="open-pdf-btn"
+                    class="w-full py-2 px-4 border rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                    Generate PDF Report
+                </button>`;
+            actionsSection.prepend(pdfBar);
+            document.getElementById('open-pdf-btn').addEventListener('click', () => {
+                if (!currentEMRId) return alert('No EMR selected.');
+                window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf`, '_blank');
+            });
+
+            // Create the form fields and buttons
+            const formFieldsHtml = `
+                <div>
+                    <label for="doctor-diagnosis" class="block text-sm font-medium">Diagnosis</label>
+                    <textarea id="doctor-diagnosis" name="doctorDiagnosis" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea>
+                </div>
+                <div>
+                    <label for="doctor-report" class="block text-sm font-medium">Report & Findings</label>
+                    <textarea id="doctor-report" name="doctorReport" rows="4" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea>
+                </div>
+                <div>
+                    <label for="doctor-recommendations" class="block text-sm font-medium">Recommendations</label>
+                    <textarea id="doctor-recommendations" name="doctorRecommendations" rows="4" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea>
+                </div>
+                <div>
+                    <label for="doctor-private-notes" class="block text-sm font-medium">Private Notes</label>
+                    <textarea id="doctor-private-notes" name="doctorPrivateNotes" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea>
+                </div>
+                <fieldset class="border p-4 rounded-md">
+                    <legend class="text-sm font-medium px-1">Type of Consultation</legend>
+                    <div class="mt-2 space-y-2">
+                        <div class="flex items-center"><input id="type-office" name="consultationType" type="checkbox" value="Office Visit" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-office" class="ml-2 block text-sm">Visit in Physician's Office</label></div>
+                        <div class="flex items-center"><input id="type-home" name="consultationType" type="checkbox" value="Home Visit" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-home" class="ml-2 block text-sm">Visit at Patient's Domicile</label></div>
+                        <div class="flex items-center"><input id="type-online" name="consultationType" type="checkbox" value="Web-based" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-online" class="ml-2 block text-sm">Web-based Consultation</label></div>
+                        <div class="flex items-center"><input id="type-phone" name="consultationType" type="checkbox" value="Phone Call" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-phone" class="ml-2 block text-sm">Phone Call</label></div>
+                        <div class="flex items-center"><input id="type-review" name="consultationType" type="checkbox" value="Document Review Only" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-review" class="ml-2 block text-sm">Review of Medical Documents Only</label></div>
+                    </div>
+                </fieldset>
+                <div class="flex justify-between space-x-4">
+                    <button type="button" id="save-report-button" class="flex-1 py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save</button>
+                    <button type="button" id="finalize-record-button" class="flex-1 py-2 px-4 border rounded-md text-white bg-green-600 hover:bg-green-700">Finalize record</button>
+                </div>`;
+            docForm.innerHTML = formFieldsHtml;
+
+            if (isReportComplete) {
+                // Disable edits
+                docForm.querySelectorAll('textarea, input[type="checkbox"]').forEach(el => { el.disabled = true; });
+                // Hide Save
+                document.getElementById('save-report-button').style.display = 'none';
+                // Keep finalize button as a secondary PDF trigger
+                const finalizeButton = document.getElementById('finalize-record-button');
+                finalizeButton.textContent = 'Generate PDF Report';
+                finalizeButton.classList.replace('bg-green-600', 'bg-blue-600');
+                finalizeButton.classList.replace('hover:bg-green-700', 'hover:bg-blue-700');
+                finalizeButton.addEventListener('click', () => {
+                    window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf`, '_blank');
+                });
+            } else {
+                // Populate values
+                document.getElementById('doctor-diagnosis').value = currentEMR.doctor_diagnosis || '';
+                document.getElementById('doctor-report').value = currentEMR.doctor_report || '';
+                document.getElementById('doctor-recommendations').value = currentEMR.doctor_recommendations || '';
+                document.getElementById('doctor-private-notes').value = currentEMR.doctor_private_notes || '';
+
+                const savedTypes = ensureArray(currentEMR.consultation_type);
+                document.querySelectorAll('input[name="consultationType"]').forEach(cb => {
+                    if (savedTypes.includes(cb.value)) cb.checked = true;
+                });
+
+                document.getElementById('save-report-button').addEventListener('click', async () => {
+                    await handleDoctorUpdate(currentEMRId, false);
+                });
+                document.getElementById('finalize-record-button').addEventListener('click', async () => {
+                    if (confirm("Are you sure you want to finalize this record? You cannot make further changes.")) {
+                        await handleDoctorUpdate(currentEMRId, true);
+                        window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf`, '_blank');
+                        renderView('doctorDashboard');
+                    }
+                });
+            }
+        }
+
+        async function handleAdminUpdate(event) {
+            event.preventDefault();
+            const messageDiv = document.getElementById('admin-update-message');
+            messageDiv.classList.add('hidden');
+            const updates = {
+                assignedDoctorId: document.getElementById('assign-doctor').value || null,
+                status: document.getElementById('assign-doctor').value ? 'assigned' : 'submitted_by_patient'
+            };
+            try {
+                await handleApiRequest(`${API_URL}/api/emrs/${currentEMRId}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'admin', updates })
+                });
+                messageDiv.textContent = 'Changes saved successfully!';
+                messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+            } catch (error) {
+                messageDiv.textContent = 'Failed to save changes.';
+                messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+            } finally {
+                messageDiv.classList.remove('hidden');
+            }
+        }
+
+        async function handleDoctorUpdate(emrId, finalize = false) {
+            const messageDiv = document.getElementById('doctor-form-message');
+            messageDiv.classList.add('hidden');
+
+            const selectedTypes = Array.from(document.querySelectorAll('input[name="consultationType"]:checked')).map(cb => cb.value);
+
+            const updates = {
+                doctorDiagnosis: document.getElementById('doctor-diagnosis').value,
+                doctorReport: document.getElementById('doctor-report').value,
+                doctorRecommendations: document.getElementById('doctor-recommendations').value,
+                doctorPrivateNotes: document.getElementById('doctor-private-notes').value,
+                consultationType: selectedTypes,
+                status: finalize ? 'report_complete' : currentEMR.status
+            };
+
+            try {
+                await handleApiRequest(`${API_URL}/api/emrs/${emrId}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: 'doctor', updates })
+                });
+                messageDiv.textContent = 'Report saved successfully!';
+                messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+
+                // Update local cache WITHOUT re-stringifying
+                const i = allEMRs.findIndex(e => e.id === emrId);
+                if (i !== -1) {
+                    allEMRs[i].doctor_diagnosis = updates.doctorDiagnosis;
+                    allEMRs[i].doctor_report = updates.doctorReport;
+                    allEMRs[i].doctor_recommendations = updates.doctorRecommendations;
+                    allEMRs[i].doctor_private_notes = updates.doctorPrivateNotes;
+                    allEMRs[i].consultation_type = updates.consultationType; // keep as array
+                    allEMRs[i].status = updates.status;
+                }
+            } catch (error) {
+                messageDiv.textContent = 'Failed to save report.';
+                messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+            } finally {
+                messageDiv.classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            currentUser = null; allEMRs = []; allDoctors = []; currentEMRId = null; currentDoctorId = null;
+            initializeApp();
+        }
+
+        // --- INIT ---
+        async function initializeApp() { await fetchAllDoctors(); renderView('welcome'); }
+        initializeApp();
+    </script>
+</body>
+</html>
