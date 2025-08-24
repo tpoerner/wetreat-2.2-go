@@ -209,27 +209,66 @@ app.delete('/api/users/doctor/:userId', async (req, res) => {
     }
 });
 
-// Update an EMR
+// The PUT route now handles updates for both roles
 app.put('/api/emrs/:id', async (req, res) => {
     const { id } = req.params;
     const { role, updates } = req.body;
+
+    if (!updates) {
+        return res.status(400).json({ message: 'No updates provided.' });
+    }
+
     try {
+        const setClauses = [];
+        const values = [];
+        let valueIndex = 1;
+
         if (role === 'admin') {
-            await pool.query(`UPDATE emrs SET assigned_doctor_id = $1, status = $2, updated_at = NOW() WHERE id = $3`,
-            [updates.assignedDoctorId, updates.status, id]);
+            if ('assignedDoctorId' in updates) {
+                setClauses.push(`assigned_doctor_id = $${valueIndex++}`);
+                values.push(updates.assignedDoctorId);
+            }
+            if ('status' in updates) {
+                setClauses.push(`status = $${valueIndex++}`);
+                values.push(updates.status);
+            }
         } else if (role === 'doctor') {
-            await pool.query(`
-                UPDATE emrs SET
-                    doctor_diagnosis = $1, doctor_report = $2, doctor_recommendations = $3, doctor_private_notes = $4,
-                    consultation_type = $5, status = $6, updated_at = NOW()
-                WHERE id = $7`,
-            [
-                updates.doctorDiagnosis, updates.doctorReport, updates.doctorRecommendations, updates.doctorPrivateNotes,
-                JSON.stringify(updates.consultationType), updates.status, id
-            ]);
+            if ('doctorDiagnosis' in updates) {
+                setClauses.push(`doctor_diagnosis = $${valueIndex++}`);
+                values.push(updates.doctorDiagnosis);
+            }
+            if ('doctorReport' in updates) {
+                setClauses.push(`doctor_report = $${valueIndex++}`);
+                values.push(updates.doctorReport);
+            }
+            if ('doctorRecommendations' in updates) {
+                setClauses.push(`doctor_recommendations = $${valueIndex++}`);
+                values.push(updates.doctorRecommendations);
+            }
+            if ('doctorPrivateNotes' in updates) {
+                setClauses.push(`doctor_private_notes = $${valueIndex++}`);
+                values.push(updates.doctorPrivateNotes);
+            }
+            if ('consultationType' in updates) {
+                setClauses.push(`consultation_type = $${valueIndex++}`);
+                values.push(JSON.stringify(updates.consultationType));
+            }
+            if ('status' in updates) {
+                setClauses.push(`status = $${valueIndex++}`);
+                values.push(updates.status);
+            }
         } else {
             return res.status(403).json({ message: 'Invalid role' });
         }
+        
+        if (setClauses.length === 0) {
+            return res.status(200).json({ message: 'No updates to perform.' });
+        }
+
+        const query = `UPDATE emrs SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${valueIndex}`;
+        values.push(id);
+
+        await pool.query(query, values);
         res.status(200).json({ message: 'EMR updated successfully' });
     } catch (error) {
         console.error("Error updating EMR:", error);
@@ -257,11 +296,9 @@ app.get('/api/emrs/:id/generate-pdf', async (req, res) => {
 
         let logoBuffer = null;
         try {
-            // Attempt to fetch the logo. If it fails, logoBuffer will remain null.
             logoBuffer = await fetchImage('https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png');
         } catch (imageError) {
             console.error("Failed to fetch logo image:", imageError);
-            // This allows the rest of the code to run without crashing.
         }
 
         const doc = new PDFDocument({ margin: 50 });
