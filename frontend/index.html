@@ -460,8 +460,8 @@
             detailContainer.innerHTML = `<div class="border-b pb-4"><h3 class="text-lg font-semibold text-gray-800">Patient Information</h3><p><strong class="font-medium text-gray-600">Name:</strong> ${emr.patient_name||'N/A'}</p><p><strong class="font-medium text-gray-600">Email:</strong> ${emr.patient_email||'N/A'}</p><p><strong class="font-medium text-gray-600">Date of Birth:</strong> ${emr.patient_dob?new Date(emr.patient_dob).toLocaleDateString():'N/A'}</p></div><div class="py-4"><h3 class="text-lg font-semibold text-gray-800">Medical Information</h3><p><strong class="font-medium text-gray-600">Symptoms:</strong></p><p class="pl-2">${emr.symptoms||'N/A'}</p><p class="mt-2"><strong class="font-medium text-gray-600">Medical History:</strong></p><p class="pl-2">${emr.medical_history||'N/A'}</p><p class="mt-2"><strong class="font-medium text-gray-600">Current Medication:</strong></p><p class="pl-2">${emr.current_medication||'N/A'}</p><p class="mt-2"><strong class="font-medium text-gray-600">Medical Documents:</strong></p><p class="pl-2">${documentsHtml}</p></div>`;
             
             const docForm = document.getElementById('doctor-update-form');
-            const isReportComplete = emr.status === 'report_complete';
-
+            
+            // Render the form fields
             docForm.innerHTML = `
                 <div><label for="doctor-diagnosis" class="block text-sm font-medium">Diagnosis</label><textarea id="doctor-diagnosis" name="doctorDiagnosis" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div>
                 <div><label for="doctor-report" class="block text-sm font-medium">Report & Findings</label><textarea id="doctor-report" name="doctorReport" rows="4" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div>
@@ -478,7 +478,7 @@
             `;
             
             // Set values and disable fields if the report is complete
-            if (isReportComplete) {
+            if (emr.status === 'report_complete') {
                 docForm.querySelectorAll('textarea, input[type="checkbox"]').forEach(el => {
                     el.disabled = true;
                 });
