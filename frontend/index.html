@@ -554,3 +554,32 @@
                     allEMRs[emrIndex].doctor_recommendations = updates.doctorRecommendations;
                     allEMRs[emrIndex].doctor_private_notes = updates.doctorPrivateNotes;
                     allEMRs[emrIndex].consultation_type = JSON.stringify(updates.consultationType);
+                    allEMRs[emrIndex].status = updates.status;
+                }
+            } catch (error) {
+                messageDiv.textContent = 'Failed to save report.';
+                messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+            } finally {
+                messageDiv.classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            allEMRs = [];
+            allDoctors = [];
+            currentEMRId = null;
+            currentDoctorId = null;
+            initializeApp();
+        }
+
+        // --- INITIAL LOAD ---
+        async function initializeApp() {
+            await fetchAllDoctors();
+            renderView('welcome');
+        }
+
+        initializeApp();
+    </script>
+</body>
+</html>
