@@ -45,12 +45,14 @@
                     <div class="space-y-4">
                         <h2 class="text-lg font-semibold text-gray-700">Please select your role:</h2>
                         <button onclick="renderView('patientForm')" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700">I am a Patient</button>
-                        <button onclick="renderView('login')" class="w-full bg-gray-700 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800">I am a Doctor or Admin</button>
+                        <button onclick="renderView('login')" class="w-full bg-gray-700 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800">Consulting Physician</button>
+                        <button onclick="renderView('login')" class="w-full bg-gray-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-700">Admin</button>
                     </div>
                 </div>`,
             login: `
                 <div class="bg-white p-8 rounded-xl shadow-lg max-w-md mx-auto">
-                    <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Doctor & Admin Portal</h2>
+                    <img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" alt="WeTreat Logo" class="mx-auto w-24 h-24 rounded-full mb-4 object-cover">
+                    <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Portal Login</h2>
                     <form id="login-form" class="space-y-4">
                         <div><label for="email" class="block text-sm font-medium">Email</label><input type="email" id="email" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
                         <div><label for="password" class="block text-sm font-medium">Password</label><input type="password" id="password" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
@@ -62,7 +64,7 @@
             adminDashboard: `
                 <div class="bg-white p-8 rounded-xl shadow-lg">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
+                        <div class="flex items-center space-x-4"><img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" alt="WeTreat Logo" class="w-12 h-12 rounded-full object-cover"><h2 class="text-2xl font-bold text-gray-800">Admin Dashboard</h2></div>
                         <div class="flex space-x-4">
                             <button onclick="renderView('manageDoctors')" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Manage Doctors</button>
                             <button onclick="logout()" class="text-sm font-semibold text-red-600 hover:text-red-800">Logout</button>
@@ -73,7 +75,7 @@
             doctorDashboard: `
                 <div class="bg-white p-8 rounded-xl shadow-lg">
                     <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-bold text-gray-800">Assigned Consultations</h2>
+                         <div class="flex items-center space-x-4"><img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" alt="WeTreat Logo" class="w-12 h-12 rounded-full object-cover"><h2 class="text-2xl font-bold text-gray-800">Assigned Consultations</h2></div>
                         <button onclick="logout()" class="text-sm font-semibold text-red-600 hover:text-red-800">Logout</button>
                     </div>
                     <div id="doctor-emr-list-container" class="space-y-4"></div>
@@ -97,6 +99,7 @@
         function renderPatientForm() {
             const view = `
                 <div class="bg-white p-8 rounded-xl shadow-lg">
+                    <img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" alt="WeTreat Logo" class="mx-auto w-24 h-24 rounded-full mb-4 object-cover">
                     <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">New Consultation Request</h2>
                     <form id="patient-form" class="space-y-6"></form>
                     <div id="patient-form-message" class="hidden mt-4 text-center text-sm"></div>
@@ -137,7 +140,7 @@
             const container = document.getElementById('medical-documents-container');
             const row = document.createElement('div');
             row.className = 'grid grid-cols-1 md:grid-cols-3 gap-2 items-center';
-            row.innerHTML = `<input type="text" placeholder="URL to PDF or DICOM viewer" class="md:col-span-2 px-2 py-1 border rounded-md" name="doc_url"><input type="text" placeholder="Short description" class="px-2 py-1 border rounded-md" name="doc_name"><input type="text" placeholder="Password (optional)" class="px-2 py-1 border rounded-md" name="doc_password">`;
+            row.innerHTML = `<input type="text" placeholder="URL to PDF or DICOM Web Viewer" class="md:col-span-2 px-2 py-1 border rounded-md" name="doc_url"><input type="text" placeholder="Short description" class="px-2 py-1 border rounded-md" name="doc_name"><input type="text" placeholder="Password (if needed)" class="px-2 py-1 border rounded-md" name="doc_password">`;
             container.appendChild(row);
         }
 
