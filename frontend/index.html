@@ -44,9 +44,11 @@
                     <p class="text-gray-600 mt-2 mb-8">Your trusted online medical consultation platform.</p>
                     <div class="space-y-4">
                         <h2 class="text-lg font-semibold text-gray-700">Please select your role:</h2>
-                        <button onclick="renderView('patientForm')" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700">I am a Patient</button>
-                        <button onclick="renderView('login')" class="w-full bg-gray-700 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800">Consulting Physician</button>
-                        <button onclick="renderView('login')" class="w-full bg-gray-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-700">Admin</button>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button onclick="renderView('patientForm')" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700">I am a Patient</button>
+                            <button onclick="renderView('login')" class="w-full bg-gray-700 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-800">Consulting Physician</button>
+                            <button onclick="renderView('login')" class="w-full bg-gray-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-gray-700">Admin</button>
+                        </div>
                     </div>
                 </div>`,
             login: `
@@ -447,22 +449,45 @@
                 <div class="bg-white p-8 rounded-xl shadow-lg">
                     <div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold text-gray-800">Consultation Details</h2><button onclick="renderView('doctorDashboard', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800">&larr; Back</button></div>
                     <div id="emr-detail-content-doctor" class="space-y-4"></div>
-                    <div id="doctor-actions-section" class="mt-6 pt-6 border-t"><h3 class="text-lg font-semibold text-gray-700">Section #2: Your Report</h3><form id="doctor-update-form" class="space-y-4 mt-4"><div><label for="doctor-report" class="block text-sm font-medium">Report & Findings</label><textarea id="doctor-report" name="doctorReport" rows="4" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div><div><label for="doctor-recommendations" class="block text-sm font-medium">Recommendations</label><textarea id="doctor-recommendations" name="doctorRecommendations" rows="4" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div><div><label for="doctor-private-notes" class="block text-sm font-medium">Private Notes</label><textarea id="doctor-private-notes" name="doctorPrivateNotes" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div><button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save Report</button></form><div id="doctor-update-message" class="hidden mt-4 text-center text-sm"></div></div>
+                    <div id="doctor-actions-section" class="mt-6 pt-6 border-t"><h3 class="text-lg font-semibold text-gray-700">Section #2: Your Report</h3><form id="doctor-update-form" class="space-y-4 mt-4"></form><div id="doctor-update-message" class="hidden mt-4 text-center text-sm"></div></div>
                     <div class="mt-6 pt-6 border-t"><button id="generate-pdf-button" disabled class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-gray-400 cursor-not-allowed">Generate PDF (Payment Pending)</button></div>
                 </div>`;
 
             const detailContainer = document.getElementById('emr-detail-content-doctor');
             detailContainer.innerHTML = `<div class="border-b pb-4"><h3 class="text-lg font-semibold text-gray-800">Patient Information</h3><p><strong class="font-medium text-gray-600">Name:</strong> ${emr.patient_name||'N/A'}</p><p><strong class="font-medium text-gray-600">Symptoms:</strong></p><p class="pl-2">${emr.symptoms||'N/A'}</p></div>`;
+            
+            const docForm = document.getElementById('doctor-update-form');
+            docForm.innerHTML = `
+                <div><label for="doctor-diagnosis" class="block text-sm font-medium">Diagnosis</label><textarea id="doctor-diagnosis" name="doctorDiagnosis" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div>
+                <div><label for="doctor-report" class="block text-sm font-medium">Report & Findings</label><textarea id="doctor-report" name="doctorReport" rows="4" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div>
+                <div><label for="doctor-recommendations" class="block text-sm font-medium">Recommendations</label><textarea id="doctor-recommendations" name="doctorRecommendations" rows="4" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div>
+                <div><label for="doctor-private-notes" class="block text-sm font-medium">Private Notes</label><textarea id="doctor-private-notes" name="doctorPrivateNotes" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea></div>
+                <fieldset class="border p-4 rounded-md"><legend class="text-sm font-medium px-1">Type of Consultation</legend><div class="mt-2 space-y-2">
+                    <div class="flex items-center"><input id="type-office" name="consultationType" type="checkbox" value="Office Visit" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-office" class="ml-2 block text-sm">Visit in Physician's Office</label></div>
+                    <div class="flex items-center"><input id="type-home" name="consultationType" type="checkbox" value="Home Visit" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-home" class="ml-2 block text-sm">Visit at Patient's Domicile</label></div>
+                    <div class="flex items-center"><input id="type-online" name="consultationType" type="checkbox" value="Online without Video" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-online" class="ml-2 block text-sm">Online Consultation (w/o video)</label></div>
+                    <div class="flex items-center"><input id="type-phone" name="consultationType" type="checkbox" value="Phone Call" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-phone" class="ml-2 block text-sm">Phone Call</label></div>
+                    <div class="flex items-center"><input id="type-review" name="consultationType" type="checkbox" value="Document Review Only" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-review" class="ml-2 block text-sm">Review of Medical Documents Only</label></div>
+                </div></fieldset>
+                <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save Report</button>
+            `;
+
+            document.getElementById('doctor-diagnosis').value = emr.doctor_diagnosis || '';
             document.getElementById('doctor-report').value = emr.doctor_report || '';
             document.getElementById('doctor-recommendations').value = emr.doctor_recommendations || '';
             document.getElementById('doctor-private-notes').value = emr.doctor_private_notes || '';
+            const savedTypes = emr.consultation_type ? JSON.parse(emr.consultation_type) : [];
+            document.querySelectorAll('input[name="consultationType"]').forEach(checkbox => {
+                if (savedTypes.includes(checkbox.value)) checkbox.checked = true;
+            });
+
             const pdfButton = document.getElementById('generate-pdf-button');
             if (emr.is_payment_confirmed) {
                 pdfButton.disabled = false;
                 pdfButton.textContent = 'Generate PDF Report';
                 pdfButton.className = 'w-full flex justify-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700';
             }
-            document.getElementById('doctor-update-form').addEventListener('submit', handleDoctorUpdate);
+            docForm.addEventListener('submit', handleDoctorUpdate);
             pdfButton.addEventListener('click', () => window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf`, '_blank'));
         }
 
@@ -493,10 +518,20 @@
             event.preventDefault();
             const messageDiv = document.getElementById('doctor-update-message');
             messageDiv.classList.add('hidden');
+            
+            const selectedTypes = [];
+            document.querySelectorAll('input[name="consultationType"]:checked').forEach(checkbox => selectedTypes.push(checkbox.value));
+
             const updates = {
+                symptoms: document.getElementById('symptoms').value,
+                medicalHistory: document.getElementById('medicalHistory').value,
+                currentMedication: document.getElementById('medication').value,
+                medicalDocuments: [], // Rebuild this from the form if needed
+                doctorDiagnosis: document.getElementById('doctor-diagnosis').value,
                 doctorReport: document.getElementById('doctor-report').value,
                 doctorRecommendations: document.getElementById('doctor-recommendations').value,
                 doctorPrivateNotes: document.getElementById('doctor-private-notes').value,
+                consultationType: selectedTypes,
                 status: 'report_complete'
             };
             try {
