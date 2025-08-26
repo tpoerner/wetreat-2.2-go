@@ -1,0 +1,48 @@
+{
+  "app": { "title": "WeTreat Platform" },
+  "welcome": {
+    "title": "Welcome to WeTreat",
+    "tagline": "Your trusted online medical consultation platform.",
+    "select_role": "Please select your role:"
+  },
+  "roles": { "patient": "Patient", "doctor": "Consulting Physician", "admin": "Admin" },
+  "login": { "title": "Portal Login", "submit": "Login" },
+  "nav": { "back": "← Back", "back_welcome": "← Back to Welcome" },
+  "auth": { "logout": "Logout" },
+  "admin": { "title": "Admin Dashboard", "manage_doctors": "Manage Doctors", "create_doctor": "Create New Doctor", "create_btn": "Create Doctor" },
+  "doctor": { "title": "Assigned Consultations" },
+  "patient": { "new_request": "New Consultation Request", "instructions_btn": "Instructions / Read Me" },
+  "sections": { "account": "Account", "personal": "Personal Data", "medical": "Medical Data", "doctors": "Consulting Physicians" },
+  "form": {
+    "email": { "label": "Email", "placeholder": "name@example.com" },
+    "password": { "label": "Password", "placeholder": "Your password" },
+    "fullname": { "label": "Full Name", "placeholder": "e.g., Jane Doe" },
+    "dob": { "label": "Date of Birth" },
+    "symptoms": { "label": "Symptoms", "placeholder": "e.g., chest pain, dyspnea" },
+    "history": { "label": "Medical History", "placeholder": "e.g., prior PCI, HTN" },
+    "medication": { "label": "Current Medication", "placeholder": "e.g., ASA, statin" },
+    "documents": {
+      "title": "Medical Documents & Imaging",
+      "add": "+ Add Document",
+      "url_ph": "URL to PDF or DICOM Web Viewer",
+      "desc_ph": "Short description",
+      "pw_ph": "Password (if needed)"
+    },
+    "notes": { "label": "Notes", "placeholder": "Mention preferred doctor or scheduling needs" },
+    "submit": "Submit for Review"
+  },
+  "fees": { "title": "Consultation Fees (€)", "office": "Office", "home": "Home", "video": "Video", "phone": "Phone", "review": "Review" },
+  "doctors": { "none": "No doctors available.", "expertise": "Expertise:", "affiliation": "Affiliation:" },
+  "generic": { "edit": "Edit", "delete": "Delete", "understand": "I Understand" },
+  "instr": {
+    "title": "Instructions for Completing the Consultation Request",
+    "read_first": "Please read carefully before submitting your request.",
+    "form": {"h": "1) Completing the Form", "li1": "Provide accurate personal and medical information.", "li2": "Use clear descriptions for symptoms (onset, triggers, duration).", "li3": "Optionally review physician profiles and add notes."},
+    "upload": {"h": "2) Uploading Medical Documents", "li1": "Allowed: PDF and hospital PACS / DICOM links.", "li2": "Not accepted: WhatsApp, WeTransfer, email attachments.", "li3": "WeTreat is view‑only: we do not download or redistribute your files."},
+    "onboarding": {"h": "3) Onboarding Process After Submission", "li1": "Admin review for completeness and GDPR compliance.", "li2": "Direct contact by email or phone.", "li3": "Payment & consent required before assignment."},
+    "consult": {"h": "4) Consultation and Report", "li1": "Physician completes a medical report.", "li2": "Report provided as PDF; e‑signature optional.", "li3": "Admins can forward the report to the patient."},
+    "legal": {"h": "5) Responsibilities and Legal Notes", "li1": "Medical responsibility lies with the consulting physician.", "li2": "WeTreat provides a secure (tele)consultation platform only.", "li3": "Data are processed according to GDPR and EU regulations.", "li4": "Submitting the form implies consent for data processing."},
+    "note": "If your PDFs are password‑protected, include the password in the Documents section."
+  },
+  "generic2": { "loading_emrs": "Loading EMRs...", "none_emrs": "No EMRs have been submitted yet.", "assigned_none": "You have no assigned consultations." }
+}
