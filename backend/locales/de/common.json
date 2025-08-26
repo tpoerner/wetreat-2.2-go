@@ -1,0 +1,27 @@
+{
+  "server": { "health": "Dienst ist verfügbar" },
+  "errors": { "not_found": "EMR nicht gefunden." },
+  "pdf": {
+    "title": "WeTreat Medizinischer Bericht",
+    "header": "Medizinischer Konsultationsbericht",
+    "section": {
+      "patient": "Patientendaten",
+      "medical": "Medizinische Informationen",
+      "report": "Ärztlicher Bericht"
+    },
+    "labels": {
+      "name": "Name",
+      "dob": "Geburtsdatum",
+      "symptoms": "Symptome",
+      "history": "Anamnese",
+      "medication": "Aktuelle Medikation",
+      "documents": "Medizinische Dokumente",
+      "doc_password": "Passwort",
+      "diagnosis": "Diagnose",
+      "findings": "Bericht & Befunde",
+      "recommendations": "Empfehlungen",
+      "types": "Konsultationsart(en)",
+      "generated_on": "Bericht erstellt am"
+    }
+  }
+}
