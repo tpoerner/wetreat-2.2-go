@@ -1,0 +1,48 @@
+{
+  "app": { "title": "WeTreat Plattform" },
+  "welcome": {
+    "title": "Willkommen bei WeTreat",
+    "tagline": "Ihre vertrauenswürdige Plattform für medizinische Online‑Konsultationen.",
+    "select_role": "Bitte wählen Sie Ihre Rolle:"
+  },
+  "roles": { "patient": "Patient", "doctor": "Konsiliarärztin/‑arzt", "admin": "Admin" },
+  "login": { "title": "Portal‑Login", "submit": "Anmelden" },
+  "nav": { "back": "← Zurück", "back_welcome": "← Zurück zur Startseite" },
+  "auth": { "logout": "Abmelden" },
+  "admin": { "title": "Admin‑Dashboard", "manage_doctors": "Ärztinnen/Ärzte verwalten", "create_doctor": "Neue Ärztin/Neuer Arzt", "create_btn": "Anlegen" },
+  "doctor": { "title": "Zugewiesene Konsultationen" },
+  "patient": { "new_request": "Neue Konsultationsanfrage", "instructions_btn": "Hinweise / Read Me" },
+  "sections": { "account": "Konto", "personal": "Persönliche Daten", "medical": "Medizinische Daten", "doctors": "Konsiliarärztinnen/‑ärzte" },
+  "form": {
+    "email": { "label": "E‑Mail", "placeholder": "name@beispiel.de" },
+    "password": { "label": "Passwort", "placeholder": "Ihr Passwort" },
+    "fullname": { "label": "Vollständiger Name", "placeholder": "z. B. Max Mustermann" },
+    "dob": { "label": "Geburtsdatum" },
+    "symptoms": { "label": "Symptome", "placeholder": "z. B. Brustschmerz, Dyspnoe" },
+    "history": { "label": "Anamnese", "placeholder": "z. B. PCI, Hypertonie" },
+    "medication": { "label": "Aktuelle Medikation", "placeholder": "z. B. ASS, Statin" },
+    "documents": {
+      "title": "Medizinische Dokumente & Bildgebung",
+      "add": "+ Dokument hinzufügen",
+      "url_ph": "URL zu PDF oder DICOM‑Webviewer",
+      "desc_ph": "Kurze Beschreibung",
+      "pw_ph": "Passwort (falls nötig)"
+    },
+    "notes": { "label": "Notizen", "placeholder": "Bevorzugte Ärztin/Arzt oder Terminwünsche" },
+    "submit": "Zur Prüfung einreichen"
+  },
+  "fees": { "title": "Konsultationshonorare (€)", "office": "Praxis", "home": "Hausbesuch", "video": "Video", "phone": "Telefon", "review": "Gutachten" },
+  "doctors": { "none": "Keine Ärztinnen/Ärzte verfügbar.", "expertise": "Expertise:", "affiliation": "Zugehörigkeit:" },
+  "generic": { "edit": "Bearbeiten", "delete": "Löschen", "understand": "Verstanden" },
+  "instr": {
+    "title": "Hinweise zum Ausfüllen der Konsultationsanfrage",
+    "read_first": "Bitte vor dem Absenden sorgfältig lesen.",
+    "form": {"h": "1) Formular ausfüllen", "li1": "Geben Sie korrekte persönliche und medizinische Daten an.", "li2": "Beschreiben Sie Symptome klar (Beginn, Auslöser, Dauer).", "li3": "Sichten Sie optional Ärzt*innenprofile und ergänzen Sie Notizen."},
+    "upload": {"h": "2) Dokumente hochladen", "li1": "Zulässig: PDF sowie Links zu Klinik‑PACS/DICOM.", "li2": "Nicht akzeptiert: WhatsApp, WeTransfer, E‑Mail‑Anhänge.", "li3": "WeTreat ist nur Ansicht: keine Downloads oder Weitergabe."},
+    "onboarding": {"h": "3) Nach dem Absenden", "li1": "Admin‑Prüfung auf Vollständigkeit & DSGVO.", "li2": "Direkter Kontakt per E‑Mail oder Telefon.", "li3": "Zuweisung erst nach Zahlung & Einwilligung."},
+    "consult": {"h": "4) Konsultation & Bericht", "li1": "Die/Der Ärzt*in erstellt einen Bericht.", "li2": "Bericht als PDF; e‑Signatur optional.", "li3": "Admin kann den Bericht weiterleiten."},
+    "legal": {"h": "5) Verantwortlichkeiten & Rechtliches", "li1": "Ärztliche Verantwortung liegt bei der/dem Konsultierenden.", "li2": "WeTreat stellt nur die sichere (Tele‑)Plattform bereit.", "li3": "Datenverarbeitung gemäß DSGVO/EU‑Recht.", "li4": "Mit Absenden stimmen Sie der Datenverarbeitung zu."},
+    "note": "Bei passwortgeschützten PDFs bitte das Passwort im Dokumenten‑Abschnitt angeben."
+  },
+  "generic2": { "loading_emrs": "EMRs werden geladen…", "none_emrs": "Noch keine EMRs eingereicht.", "assigned_none": "Keine zugewiesenen Konsultationen." }
+}
