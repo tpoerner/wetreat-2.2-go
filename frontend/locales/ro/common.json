@@ -1,0 +1,48 @@
+{
+  "app": { "title": "Platforma WeTreat" },
+  "welcome": {
+    "title": "Bun venit la WeTreat",
+    "tagline": "Platformă de consultații medicale online de încredere.",
+    "select_role": "Vă rugăm să vă alegeți rolul:"
+  },
+  "roles": { "patient": "Pacient", "doctor": "Medic consultant", "admin": "Admin" },
+  "login": { "title": "Autentificare în portal", "submit": "Autentificare" },
+  "nav": { "back": "← Înapoi", "back_welcome": "← Înapoi la început" },
+  "auth": { "logout": "Deconectare" },
+  "admin": { "title": "Tablou de bord Admin", "manage_doctors": "Gestionați medicii", "create_doctor": "Creați medic nou", "create_btn": "Creați" },
+  "doctor": { "title": "Consultații alocate" },
+  "patient": { "new_request": "Cerere nouă de consultație", "instructions_btn": "Instrucțiuni" },
+  "sections": { "account": "Cont", "personal": "Date personale", "medical": "Date medicale", "doctors": "Medici consultanți" },
+  "form": {
+    "email": { "label": "E‑mail", "placeholder": "nume@exemplu.ro" },
+    "password": { "label": "Parolă", "placeholder": "Parola dvs." },
+    "fullname": { "label": "Nume complet", "placeholder": "ex. Ioana Popescu" },
+    "dob": { "label": "Data nașterii" },
+    "symptoms": { "label": "Simptome", "placeholder": "ex. durere toracică, dispnee" },
+    "history": { "label": "Istoric medical", "placeholder": "ex. PCI, HTA" },
+    "medication": { "label": "Medicație curentă", "placeholder": "ex. ASA, statină" },
+    "documents": {
+      "title": "Documente medicale & imagistică",
+      "add": "+ Adăugați document",
+      "url_ph": "URL către PDF sau vizualizator DICOM",
+      "desc_ph": "Descriere scurtă",
+      "pw_ph": "Parolă (dacă este necesar)"
+    },
+    "notes": { "label": "Note", "placeholder": "Medicul preferat sau nevoi de programare" },
+    "submit": "Trimite pentru verificare"
+  },
+  "fees": { "title": "Onorarii consultație (€)", "office": "Cabinet", "home": "Domiciliu", "video": "Video", "phone": "Telefon", "review": "Revizie" },
+  "doctors": { "none": "Nu sunt medici disponibili.", "expertise": "Expertiză:", "affiliation": "Afiliație:" },
+  "generic": { "edit": "Editează", "delete": "Șterge", "understand": "Am înțeles" },
+  "instr": {
+    "title": "Instrucțiuni pentru completarea cererii",
+    "read_first": "Vă rugăm citiți cu atenție înainte de trimitere.",
+    "form": {"h": "1) Completarea formularului", "li1": "Furnizați date personale și medicale corecte.", "li2": "Descrieți clar simptomele (debut, factori declanșatori, durată).", "li3": "Consultați profilurile medicilor și adăugați note."},
+    "upload": {"h": "2) Încărcarea documentelor", "li1": "Permise: PDF și linkuri PACS/DICOM ale spitalelor.", "li2": "Neacceptate: WhatsApp, WeTransfer, atașamente e‑mail.", "li3": "WeTreat este doar pentru vizualizare: fără descărcare/distribuire."},
+    "onboarding": {"h": "3) După trimitere", "li1": "Verificare administrativă (completitudine, GDPR).", "li2": "Contact direct prin e‑mail sau telefon.", "li3": "Plată & consimțământ înainte de alocare."},
+    "consult": {"h": "4) Consultație și raport", "li1": "Medicul întocmește un raport.", "li2": "Raport PDF; semnătură electronică opțională.", "li3": "Adminii pot transmite raportul pacientului."},
+    "legal": {"h": "5) Responsabilități și aspecte legale", "li1": "Responsabilitatea medicală revine medicului consultant.", "li2": "WeTreat oferă doar platforma (tele)consultație securizată.", "li3": "Prelucrarea datelor conform GDPR și legislației UE.", "li4": "Prin trimitere, vă exprimați consimțământul pentru prelucrare."},
+    "note": "Pentru PDF‑uri protejate, includeți parola la secțiunea Documente."
+  },
+  "generic2": { "loading_emrs": "Se încarcă EMR‑urile…", "none_emrs": "Nu există EMR‑uri trimise încă.", "assigned_none": "Nu aveți consultații alocate." }
+}
