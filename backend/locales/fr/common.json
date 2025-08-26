@@ -1,0 +1,27 @@
+{
+  "server": { "health": "Le service est opérationnel" },
+  "errors": { "not_found": "EMR introuvable." },
+  "pdf": {
+    "title": "Rapport médical WeTreat",
+    "header": "Rapport de consultation médicale",
+    "section": {
+      "patient": "Données du patient",
+      "medical": "Informations médicales",
+      "report": "Rapport du médecin"
+    },
+    "labels": {
+      "name": "Nom",
+      "dob": "Date de naissance",
+      "symptoms": "Symptômes",
+      "history": "Antécédents médicaux",
+      "medication": "Traitement actuel",
+      "documents": "Documents médicaux",
+      "doc_password": "Mot de passe",
+      "diagnosis": "Diagnostic",
+      "findings": "Rapport et constatations",
+      "recommendations": "Recommandations",
+      "types": "Type(s) de consultation",
+      "generated_on": "Rapport généré le"
+    }
+  }
+}
