@@ -1,3 +1,4 @@
+<!-- index.html — Part 1/?? -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,10 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title data-i18n="app.title">WeTreat Platform</title>
   <script src="https://cdn.tailwindcss.com"></script>
+
   <!-- i18n libs -->
   <script src="https://unpkg.com/i18next@23.11.5/dist/umd/i18next.min.js"></script>
   <script src="https://unpkg.com/i18next-browser-languagedetector@7.2.0/dist/umd/i18nextBrowserLanguageDetector.min.js"></script>
   <script src="https://unpkg.com/i18next-http-backend@2.7.1/i18nextHttpBackend.min.js"></script>
+
   <style>
     body { font-family: 'Inter', sans-serif; }
     .status-badge { padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: capitalize; }
@@ -22,6 +25,7 @@
     .lang-switch button{ padding:.35rem .6rem; border:1px solid #e5e7eb; border-radius:.5rem; background:#fff; cursor:pointer; font-weight:600 }
     .lang-switch button.active{ border-color:#111827 }
   </style>
+
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -58,15 +62,17 @@
     };
   </script>
 
+  <!-- Main App -->
   <script>
     // --- CONFIG / STATE ---
-    const API_URL = 'https://wetreat-22-go-production.up.railway.app';
+    const API_URL = 'https://wetreat-22-go-production.up.railway.app'; // keep as-is
     const LOCALES_BASE = '/locales';
+
     let currentUser = null, allEMRs = [], allDoctors = [], currentEMRId = null, currentEMR = null, currentDoctorId = null;
     const app = document.getElementById('app');
     const modalContainer = document.getElementById('modal-container');
 
-    // i18n init
+    // --- i18n init ---
     i18next
       .use(i18nextHttpBackend)
       .use(i18nextBrowserLanguageDetector)
@@ -79,7 +85,7 @@
         initializeApp();
       });
 
-    // switcher
+    // language switcher
     document.addEventListener('click', async (e)=>{
       const btn = e.target.closest('.lang-switch [data-lang]');
       if(!btn) return;
@@ -92,11 +98,21 @@
     });
 
     // --- HELPERS ---
-    function ensureArray(val){ if(!val) return []; if(Array.isArray(val)) return val; if(typeof val==='string'){ try{const p=JSON.parse(val); return Array.isArray(p)?p:[];}catch{return []} } return []; }
-    function isCompleteStatus(s){ return ['report_complete','closed','finalized','complete','completed'].includes((s||'').toLowerCase()); }
-    function t(key, def=''){ const v = i18next.t(key); return v===key? def||key : v; }
+    function ensureArray(val) {
+      if (!val) return [];
+      if (Array.isArray(val)) return val;
+      if (typeof val === 'string') {
+        try { const parsed = JSON.parse(val); return Array.isArray(parsed) ? parsed : []; }
+        catch { return []; }
+      }
+      return [];
+    }
+    function isCompleteStatus(s) {
+      return ['report_complete', 'closed', 'finalized', 'complete', 'completed'].includes((s || '').toLowerCase());
+    }
+    function t(key, def=''){ const v = i18next.t(key); return v===key ? (def||key) : v; }
 
-    // --- VIEWS ---
+    // --- VIEWS (templates) ---
     const templates = {
       welcome: `
         <div class="bg-white p-8 rounded-xl shadow-lg text-center">
@@ -158,7 +174,7 @@
     };
 
     // --- RENDER & NAV ---
-    function renderView(viewName){
+    function renderView(viewName) {
       app.innerHTML = templates[viewName] || '<p>Loading...</p>';
       window.applyTranslations();
       const post = {
@@ -168,11 +184,11 @@
         doctorDashboard: fetchAndDisplayDoctorEMRs,
         manageDoctors: renderManageDoctors
       };
-      if(post[viewName]) post[viewName]();
+      if (post[viewName]) post[viewName]();
     }
 
     // --- PATIENT FORM ---
-    function renderPatientForm(){
+    function renderPatientForm() {
       const view = `
         <div class="bg-white p-8 rounded-xl shadow-lg">
           <img src="https://i.postimg.cc/Sx9NFnRf/wt-logonew-whitecanvas.png" alt="WeTreat Logo" class="mx-auto w-24 h-24 rounded-full mb-4 object-cover">
@@ -249,7 +265,7 @@
       addDocumentRow();
     }
 
-    function addDocumentRow(){
+    function addDocumentRow() {
       const container = document.getElementById('medical-documents-container');
       const row = document.createElement('div');
       row.className = 'grid grid-cols-1 md:grid-cols-3 gap-2 items-center';
@@ -261,9 +277,13 @@
       window.applyTranslations();
     }
 
-    function renderDoctorProfilesForPatient(){
+    function renderDoctorProfilesForPatient() {
       const container = document.getElementById('doctor-profiles-container');
-      if(allDoctors.length===0){ container.innerHTML = `<p class="text-gray-500 text-sm" data-i18n="doctors.none">No doctors available.</p>`; window.applyTranslations(); return; }
+      if (allDoctors.length === 0) {
+        container.innerHTML = `<p class="text-gray-500 text-sm" data-i18n="doctors.none">No doctors available.</p>`;
+        window.applyTranslations();
+        return;
+      }
       container.innerHTML = allDoctors.map(doc => `
         <div class="p-3 border rounded-lg bg-gray-50">
           <div class="flex items-center space-x-3">
@@ -281,72 +301,8 @@
       window.applyTranslations();
     }
 
-    // --- ADMIN: MANAGE DOCTORS ---
-    function renderManageDoctors(){
-      app.innerHTML = `
-        <div class="bg-white p-8 rounded-xl shadow-lg">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800" data-i18n="admin.manage_doctors">Manage Doctors</h2>
-            <button onclick="renderView('adminDashboard', true)" class="text-sm font-semibold text-blue-600 hover:text-blue-800" data-i18n="nav.back">&larr; Back</button>
-          </div>
-          <div id="doctor-list-container" class="space-y-2 mb-6"></div>
-          <div class="mt-6 pt-6 border-t">
-            <h3 class="text-lg font-semibold text-gray-700 mb-4" data-i18n="admin.create_doctor">Create New Doctor</h3>
-            <form id="create-doctor-form" class="space-y-4"></form>
-            <div id="create-doctor-message" class="hidden mt-4 text-center text-sm"></div>
-          </div>
-        </div>`;
-      window.applyTranslations();
-      const form = document.getElementById('create-doctor-form');
-      form.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div><label class="block text-sm font-medium" data-i18n="form.fullname.label">Full Name*</label><input type="text" name="fullName" required class="mt-1 block w-full px-3 py-2 border rounded-md" data-i18n-placeholder="form.fullname.placeholder"></div>
-          <div><label class="block text-sm font-medium" data-i18n="form.email.label">Email*</label><input type="email" name="email" required class="mt-1 block w-full px-3 py-2 border rounded-md" data-i18n-placeholder="form.email.placeholder"></div>
-          <div><label class="block text-sm font-medium" data-i18n="form.password.label">Password*</label><input type="password" name="password" required class="mt-1 block w-full px-3 py-2 border rounded-md" data-i18n-placeholder="form.password.placeholder"></div>
-          <div><label class="block text-sm font-medium" data-i18n="form.photo.label">Photo URL</label><input type="text" name="photoUrl" class="mt-1 block w-full px-3 py-2 border rounded-md" data-i18n-placeholder="form.photo.placeholder"></div>
-          <div><label class="block text-sm font-medium" data-i18n="form.specialty.label">Specialty</label><input type="text" name="specialty" class="mt-1 block w-full px-3 py-2 border rounded-md" data-i18n-placeholder="form.specialty.placeholder"></div>
-          <div><label class="block text-sm font-medium" data-i18n="form.expertise.label">Area of Expertise</label><input type="text" name="expertiseArea" class="mt-1 block w-full px-3 py-2 border rounded-md" data-i18n-placeholder="form.expertise.placeholder"></div>
-          <div><label class="block text-sm font-medium" data-i18n="form.affiliation.label">Current Affiliation</label><input type="text" name="currentAffiliation" class="mt-1 block w-full px-3 py-2 border rounded-md" data-i18n-placeholder="form.affiliation.placeholder"></div>
-          <div><label class="block text-sm font-medium" data-i18n="form.linkedin.label">LinkedIn Profile</label><input type="text" name="linkedinUrl" class="mt-1 block w-full px-3 py-2 border rounded-md" data-i18n-placeholder="form.linkedin.placeholder"></div>
-        </div>
-        <fieldset class="border p-4 rounded-md">
-          <legend class="text-sm font-medium px-1" data-i18n="fees.title">Consultation Fees (€)</legend>
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div><label class="block text-xs" data-i18n="fees.office">Office</label><input type="number" step="0.01" name="feeOffice" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-            <div><label class="block text-xs" data-i18n="fees.home">Home</label><input type="number" step="0.01" name="feeHome" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-            <div><label class="block text-xs" data-i18n="fees.video">Video</label><input type="number" step="0.01" name="feeVideo" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-            <div><label class="block text-xs" data-i18n="fees.phone">Phone</label><input type="number" step="0.01" name="feePhone" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-            <div><label class="block text-xs" data-i18n="fees.review">Review</label><input type="number" step="0.01" name="feeReview" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
-          </div>
-        </fieldset>
-        <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-green-600 hover:bg-green-700" data-i18n="admin.create_btn">Create Doctor</button>
-      `;
-      window.applyTranslations();
-      form.addEventListener('submit', handleCreateDoctor);
-      displayDoctorListForAdmin();
-    }
-
-    function displayDoctorListForAdmin(){
-      const container = document.getElementById('doctor-list-container');
-      container.innerHTML = allDoctors.map(doc => `
-        <div class="p-3 border rounded-lg bg-gray-50 flex justify-between items-center">
-          <div class="flex items-center space-x-3">
-            <img src="${doc.photo_url || 'https://placehold.co/48x48/E2E8F0/4A5568?text=Doc'}" class="w-12 h-12 rounded-full object-cover">
-            <div>
-              <p class="font-bold">${doc.full_name}</p>
-              <p class="text-sm text-gray-600">${doc.specialty || 'N/A'}</p>
-            </div>
-          </div>
-          <div>
-            <button onclick="openEditDoctorModal('${doc.user_id}')" class="text-sm text-blue-600 hover:underline" data-i18n="generic.edit">Edit</button>
-            <button onclick="handleDeleteDoctor && handleDeleteDoctor('${doc.user_id}')" class="ml-4 text-sm text-red-600 hover:underline" data-i18n="generic.delete">Delete</button>
-          </div>
-        </div>`).join('');
-      window.applyTranslations();
-    }
-
-    // Instructions modal (text keys scaffolded; translate JSON later)
-    function openPatientInstructionsModal(){
+    // Instructions modal (translated)
+    function openPatientInstructionsModal() {
       modalContainer.innerHTML = `
         <div class="modal-overlay" onclick="closePatientInstructionsModal(event)">
           <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg w-full max-w-3xl modal-content" onclick="event.stopPropagation()">
@@ -366,7 +322,7 @@
               <ul class="list-disc pl-6 space-y-1">
                 <li data-i18n="instr.upload.li1"><strong>Allowed:</strong> PDF and hospital PACS / DICOM links.</li>
                 <li data-i18n="instr.upload.li2"><strong>Not accepted:</strong> WhatsApp, WeTransfer, email attachments.</li>
-                <li data-i18n="instr.upload.li3">WeTreat is view‑only: we do not download or redistribute your files.</li>
+                <li data-i18n="instr.upload.li3">WeTreat is view-only: we do not download or redistribute your files.</li>
               </ul>
               <h4 class="text-lg font-semibold mt-4" data-i18n="instr.onboarding.h">3) Onboarding Process After Submission</h4>
               <ol class="list-decimal pl-6 space-y-1">
@@ -377,7 +333,7 @@
               <h4 class="text-lg font-semibold mt-4" data-i18n="instr.consult.h">4) Consultation and Report</h4>
               <ul class="list-disc pl-6 space-y-1">
                 <li data-i18n="instr.consult.li1">Physician completes a medical report.</li>
-                <li data-i18n="instr.consult.li2">Report provided as PDF; e‑signature optional.</li>
+                <li data-i18n="instr.consult.li2">Report provided as PDF; e-signature optional.</li>
                 <li data-i18n="instr.consult.li3">Admins can forward the report to the patient.</li>
               </ul>
               <h4 class="text-lg font-semibold mt-4" data-i18n="instr.legal.h">5) Responsibilities and Legal Notes</h4>
@@ -387,35 +343,642 @@
                 <li data-i18n="instr.legal.li3">Data are processed according to GDPR and EU regulations.</li>
                 <li data-i18n="instr.legal.li4">Submitting the form implies consent for data processing.</li>
               </ul>
-              <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg"><p class="text-sm" data-i18n="instr.note">If your PDFs are password‑protected, include the password in the Documents section.</p></div>
+              <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg"><p class="text-sm" data-i18n="instr.note">If your PDFs are password-protected, include the password in the Documents section.</p></div>
             </div>
             <div class="mt-6 flex justify-end">
               <button class="px-4 py-2 rounded-md bg-gray-800 text-white hover:bg-gray-900" onclick="closePatientInstructionsModal(event)" data-i18n="generic.understand">I Understand</button>
             </div>
           </div>
-        </div>`;
+        </div>
+      `;
       window.applyTranslations();
     }
-    function closePatientInstructionsModal(event){ if(event) event.stopPropagation(); modalContainer.innerHTML=''; }
+    function closePatientInstructionsModal(event) { if (event) event.stopPropagation(); modalContainer.innerHTML = ''; }
 
-    function openEditDoctorModal(userId){ /* unchanged body from your version; ensure to call window.applyTranslations() after injecting */ }
+    // --- DATA FETCHING needed early so patient form can render doctors ---
+    async function fetchAllDoctors() {
+      try {
+        const response = await fetch(`${API_URL}/api/doctors`);
+        if (!response.ok) throw new Error('Could not fetch doctors.');
+        allDoctors = await response.json();
+      } catch (error) { console.error(error); allDoctors = []; }
+    }
+
+    // --- INIT (safe to call now) ---
+    async function initializeApp() {
+      await fetchAllDoctors();
+      renderView('welcome');
+    }
+  </script>
+<!-- End Part 1/?? -->
+<!-- index.html — Part 2/?? -->
+  <script>
+    // --- ADMIN: MANAGE DOCTORS ---
+    function renderManageDoctors() {
+      app.innerHTML = `
+        <div class="bg-white p-8 rounded-xl shadow-lg">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800" data-i18n="admin.manage_doctors">Manage Doctors</h2>
+            <button onclick="renderView('adminDashboard')" class="text-sm font-semibold text-blue-600 hover:text-blue-800" data-i18n="nav.back">&larr; Back</button>
+          </div>
+          <div id="doctor-list-container" class="space-y-2 mb-6"></div>
+          <div class="mt-6 pt-6 border-t">
+            <h3 class="text-lg font-semibold text-gray-700 mb-4" data-i18n="admin.create_doctor">Create New Doctor</h3>
+            <form id="create-doctor-form" class="space-y-4"></form>
+            <div id="create-doctor-message" class="hidden mt-4 text-center text-sm"></div>
+          </div>
+        </div>`;
+      const form = document.getElementById('create-doctor-form');
+      form.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div><label class="block text-sm font-medium" data-i18n="form.fullname.label">Full Name*</label><input type="text" name="fullName" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+          <div><label class="block text-sm font-medium" data-i18n="form.email.label">Email*</label><input type="email" name="email" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+          <div><label class="block text-sm font-medium" data-i18n="form.password.label">Password*</label><input type="password" name="password" required class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+          <div><label class="block text-sm font-medium" data-i18n="form.photo.label">Photo URL</label><input type="text" name="photoUrl" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+          <div><label class="block text-sm font-medium" data-i18n="form.specialty.label">Specialty</label><input type="text" name="specialty" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+          <div><label class="block text-sm font-medium" data-i18n="form.expertise.label">Area of Expertise</label><input type="text" name="expertiseArea" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+          <div><label class="block text-sm font-medium" data-i18n="form.affiliation.label">Current Affiliation</label><input type="text" name="currentAffiliation" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+          <div><label class="block text-sm font-medium" data-i18n="form.linkedin.label">LinkedIn Profile</label><input type="text" name="linkedinUrl" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+        </div>
+        <fieldset class="border p-4 rounded-md">
+          <legend class="text-sm font-medium px-1" data-i18n="form.fees.legend">Consultation Fees (€)</legend>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div><label class="block text-xs" data-i18n="form.fees.office">Office</label><input type="number" step="0.01" name="feeOffice" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+            <div><label class="block text-xs" data-i18n="form.fees.home">Home</label><input type="number" step="0.01" name="feeHome" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+            <div><label class="block text-xs" data-i18n="form.fees.video">Video</label><input type="number" step="0.01" name="feeVideo" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+            <div><label class="block text-xs" data-i18n="form.fees.phone">Phone</label><input type="number" step="0.01" name="feePhone" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+            <div><label class="block text-xs" data-i18n="form.fees.review">Review</label><input type="number" step="0.01" name="feeReview" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+          </div>
+        </fieldset>
+        <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-green-600 hover:bg-green-700" data-i18n="form.create_doctor">Create Doctor</button>
+      `;
+      window.applyTranslations();
+      form.addEventListener('submit', handleCreateDoctor);
+      displayDoctorListForAdmin();
+    }
+
+    function displayDoctorListForAdmin() {
+      const container = document.getElementById('doctor-list-container');
+      container.innerHTML = allDoctors.map(doc => `
+        <div class="p-3 border rounded-lg bg-gray-50 flex justify-between items-center">
+          <div class="flex items-center space-x-3">
+            <img src="${doc.photo_url || 'https://placehold.co/48x48/E2E8F0/4A5568?text=Doc'}" class="w-12 h-12 rounded-full object-cover">
+            <div>
+              <p class="font-bold">${doc.full_name}</p>
+              <p class="text-sm text-gray-600">${doc.specialty || t('generic.na','N/A')}</p>
+            </div>
+          </div>
+          <div>
+            <button onclick="openEditDoctorModal('${doc.user_id}')" class="text-sm text-blue-600 hover:underline" data-i18n="actions.edit">Edit</button>
+            <button onclick="handleDeleteDoctor('${doc.user_id}')" class="ml-4 text-sm text-red-600 hover:underline" data-i18n="actions.delete">Delete</button>
+          </div>
+        </div>`).join('');
+      window.applyTranslations();
+    }
+
+    function openEditDoctorModal(userId) {
+      currentDoctorId = userId;
+      const doctor = allDoctors.find(d => d.user_id === userId);
+      if (!doctor) return;
+      modalContainer.innerHTML = `
+        <div class="modal-overlay" onclick="closeEditDoctorModal(event)">
+          <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl modal-content">
+            <h2 class="text-xl font-bold mb-4">${t('admin.edit_doctor','Edit Doctor')}: ${doctor.full_name}</h2>
+            <form id="edit-doctor-form" class="space-y-4"></form>
+          </div>
+        </div>`;
+      const form = document.getElementById('edit-doctor-form');
+      form.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div><label class="block text-sm font-medium">${t('form.fullname.label','Full Name')}</label><input type="text" name="fullName" required value="${doctor.full_name || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+          <div><label class="block text-sm font-medium">${t('form.photo.label','Photo URL')}</label><input type="text" name="photoUrl" value="${doctor.photo_url || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+          <div><label class="block text-sm font-medium">${t('form.specialty.label','Specialty')}</label><input type="text" name="specialty" value="${doctor.specialty || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+          <div><label class="block text-sm font-medium">${t('form.expertise.label','Expertise')}</label><input type="text" name="expertiseArea" value="${doctor.expertise_area || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+          <div><label class="block text-sm font-medium">${t('form.affiliation.label','Affiliation')}</label><input type="text" name="currentAffiliation" value="${doctor.current_affiliation || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+          <div><label class="block text-sm font-medium">${t('form.linkedin.label','LinkedIn')}</label><input type="text" name="linkedinUrl" value="${doctor.linkedin_url || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+        </div>
+        <fieldset class="border p-4 rounded-md">
+          <legend class="text-sm font-medium px-1">${t('form.fees.legend','Fees')}</legend>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div><label class="block text-xs">${t('form.fees.office','Office')}</label><input type="number" step="0.01" name="feeOffice" value="${doctor.fee_office || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+            <div><label class="block text-xs">${t('form.fees.home','Home')}</label><input type="number" step="0.01" name="feeHome" value="${doctor.fee_home || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+            <div><label class="block text-xs">${t('form.fees.video','Video')}</label><input type="number" step="0.01" name="feeVideo" value="${doctor.fee_video || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+            <div><label class="block text-xs">${t('form.fees.phone','Phone')}</label><input type="number" step="0.01" name="feePhone" value="${doctor.fee_phone || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+            <div><label class="block text-xs">${t('form.fees.review','Review')}</label><input type="number" step="0.01" name="feeReview" value="${doctor.fee_review || ''}" class="mt-1 block w-full px-3 py-2 border rounded-md"></div>
+          </div>
+        </fieldset>
+        <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700" data-i18n="actions.save">Save</button>
+        <button type="button" onclick="closeEditDoctorModal()" class="w-full flex justify-center py-2 px-4 border rounded-md bg-gray-200" data-i18n="actions.cancel">Cancel</button>
+      `;
+      window.applyTranslations();
+      form.addEventListener('submit', handleEditDoctor);
+    }
     function closeEditDoctorModal(e){ if (e && e.target !== e.currentTarget) return; modalContainer.innerHTML=''; }
 
-    // --- API HELPERS / AUTH / FORMS --- (your original functions, unchanged)
-    async function handleApiRequest(url, options, messageDiv){
-      try{ const response = await fetch(url, options); const result = await response.json(); if(!response.ok) throw new Error(result.message || 'An error occurred.'); return result; }
-      catch(error){ if(messageDiv){ messageDiv.textContent = error.message; messageDiv.className = 'mt-4 text-center text-sm text-red-600'; messageDiv.classList.remove('hidden'); } throw error; }
+    // --- API HELPERS ---
+    async function handleApiRequest(url, options, messageDiv) {
+      try {
+        const response = await fetch(url, options);
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Error');
+        return result;
+      } catch (error) {
+        if (messageDiv) {
+          messageDiv.textContent = error.message;
+          messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+          messageDiv.classList.remove('hidden');
+        }
+        throw error;
+      }
     }
-    async function handleLogin(event){ event.preventDefault(); const form = event.target; const errorDiv = document.getElementById('login-error'); errorDiv.classList.add('hidden'); try{ const data = await handleApiRequest(`${API_URL}/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: form.elements.email.value, password: form.elements.password.value }) }, errorDiv); currentUser = data.user; await fetchAllDoctors(); if(currentUser.role==='admin') renderView('adminDashboard'); else if(currentUser.role==='doctor') renderView('doctorDashboard'); } catch(e){ console.error('Login failed'); } }
 
-    // ... keep the rest of your original JS (fetch, EMR views, doctor/admin updates)
-    // IMPORTANT: after any `innerHTML = ...`, call window.applyTranslations();
+    // --- AUTH / FORMS ---
+    async function handleLogin(event) {
+      event.preventDefault();
+      const form = event.target;
+      const errorDiv = document.getElementById('login-error');
+      errorDiv.classList.add('hidden');
+      try {
+        const data = await handleApiRequest(`${API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: form body: JSON.stringify({ email: form.elements.email.value, password: form.elements.password.value })
+        }, errorDiv);
+        currentUser = data.user;
+        await fetchAllDoctors();
+        if (currentUser.role === 'admin') renderView('adminDashboard');
+        else if (currentUser.role === 'doctor') renderView('doctorDashboard');
+      } catch (error) {
+        console.error('Login failed');
+      }
+    }
 
-    async function fetchAllDoctors(){ try{ const response = await fetch(`${API_URL}/api/doctors`); if(!response.ok) throw new Error('Could not fetch doctors.'); allDoctors = await response.json(); } catch(e){ console.error(e); allDoctors=[]; } }
+    async function handlePatientFormSubmit(event) {
+      event.preventDefault();
+      const form = event.target;
+      const messageDiv = document.getElementById('patient-form-message');
+      messageDiv.classList.add('hidden');
 
-    function logout(){ currentUser=null; allEMRs=[]; allDoctors=[]; currentEMRId=null; currentDoctorId=null; initializeApp(); }
+      const documents = [];
+      const docUrls = form.elements['doc_url'];
+      const docNames = form.elements['doc_name'];
+      const docPasswords = form.elements['doc_password'];
 
-    async function initializeApp(){ await fetchAllDoctors(); renderView('welcome'); }
+      if (docUrls && docUrls.length === undefined) {
+        if(docUrls.value) documents.push({ url: docUrls.value, name: docNames.value, password: docPasswords.value });
+      } else if (docUrls) {
+        for (let i = 0; i < docUrls.length; i++) {
+          if (docUrls[i].value) {
+            documents.push({ url: docUrls[i].value, name: docNames[i].value, password: docPasswords[i].value });
+          }
+        }
+      }
+
+      const formData = {
+        email: form.elements.email.value,
+        password: form.elements.password.value,
+        name: form.elements.name.value,
+        dob: form.elements.dob.value,
+        symptoms: form.elements.symptoms.value,
+        medicalHistory: form.elements.medicalHistory.value,
+        medication: form.elements.medication.value,
+        medicalDocuments: documents,
+        notes: form.elements.notes.value
+      };
+
+      try {
+        const result = await handleApiRequest(`${API_URL}/api/emr/submit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        }, messageDiv);
+        messageDiv.textContent = result.message;
+        messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+        messageDiv.classList.remove('hidden');
+        form.reset();
+        addDocumentRow();
+      } catch (error) {
+        console.error('Patient form submission failed');
+      }
+    }
+
+    async function handleCreateDoctor(event) {
+      event.preventDefault();
+      const form = event.target;
+      const messageDiv = document.getElementById('create-doctor-message');
+      messageDiv.classList.add('hidden');
+      const doctorData = {
+        email: form.elements.email.value, password: form.elements.password.value,
+        profile: {
+          fullName: form.elements.fullName.value, photoUrl: form.elements.photoUrl.value,
+          specialty: form.elements.specialty.value, expertiseArea: form.elements.expertiseArea.value,
+          currentAffiliation: form.elements.currentAffiliation.value, linkedinUrl: form.elements.linkedinUrl.value,
+          feeOffice: form.elements.feeOffice.value, feeHome: form.elements.feeHome.value,
+          feeVideo: form.elements.feeVideo.value, feePhone: form.elements.feePhone.value,
+          feeReview: form.elements.feeReview.value
+        }
+      };
+      try {
+        const result = await handleApiRequest(`${API_URL}/api/users/doctor`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(doctorData)
+        }, messageDiv);
+        messageDiv.textContent = result.message;
+        messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+        form.reset();
+        await fetchAllDoctors();
+        displayDoctorListForAdmin();
+      } catch (error) {
+        console.error('Create doctor failed');
+      }
+    }
+
+    async function handleEditDoctor(event) {
+      event.preventDefault();
+      const form = event.target;
+      const profileData = {
+        fullName: form.elements.fullName.value, photoUrl: form.elements.photoUrl.value,
+        specialty: form.elements.specialty.value, expertiseArea: form.elements.expertiseArea.value,
+        currentAffiliation: form.elements.currentAffiliation.value, linkedinUrl: form.elements.linkedinUrl.value,
+        feeOffice: form.elements.feeOffice.value, feeHome: form.elements.feeHome.value,
+        feeVideo: form.elements.feeVideo.value, feePhone: form.elements.feePhone.value,
+        feeReview: form.elements.feeReview.value
+      };
+      try {
+        await handleApiRequest(`${API_URL}/api/doctor-profiles/${currentDoctorId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(profileData)
+        });
+        closeEditDoctorModal();
+        await fetchAllDoctors();
+        displayDoctorListForAdmin();
+      } catch (error) {
+        alert('Failed to update doctor.');
+      }
+    }
+<!-- index.html — Part 3/?? -->
+    // --- DATA FETCHING + LIST RENDERS ---
+    async function fetchAndDisplayAdminEMRs() {
+      const container = document.getElementById('emr-list-container');
+      if(!container) return;
+      container.innerHTML = '<p>Loading EMRs...</p>';
+      try {
+        const response = await fetch(`${API_URL}/api/emrs?userId=${currentUser.id}&userRole=${currentUser.role}`);
+        if (!response.ok) throw new Error('Failed to fetch EMRs.');
+        allEMRs = await response.json();
+        container.innerHTML = '';
+        if (allEMRs.length === 0) {
+          container.innerHTML = `<p class="text-gray-500">${t('emr.none','No EMRs have been submitted yet.')}</p>`;
+          return;
+        }
+        allEMRs.forEach(emr => {
+          const card = document.createElement('div');
+          card.className = 'p-4 border rounded-lg bg-gray-50';
+          card.innerHTML = `
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-bold text-lg text-gray-800">${emr.patient_name || 'N/A'}</h3>
+                <p class="text-sm text-gray-600">${emr.patient_email || ''}</p>
+              </div>
+              <span class="status-badge status-${emr.status}">${(emr.status || '').replace(/_/g,' ')}</span>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">${t('emr.submitted','Submitted')}: ${emr.created_at ? new Date(emr.created_at).toLocaleString() : ''}</p>
+            <button onclick="viewEMRDetailsForAdmin('${emr.id}')" class="mt-4 text-sm bg-gray-700 text-white py-2 px-3 rounded-md hover:bg-gray-800">${t('actions.view_details','View Details')}</button>`;
+          container.appendChild(card);
+        });
+      } catch (error) {
+        container.innerHTML = `<p class="text-red-500">${error.message}</p>`;
+      }
+    }
+
+    async function fetchAndDisplayDoctorEMRs() {
+      const container = document.getElementById('doctor-emr-list-container');
+      if(!container) return;
+      container.innerHTML = '<p>Loading assigned EMRs...</p>';
+      try {
+        const response = await fetch(`${API_URL}/api/emrs?userId=${currentUser.id}&userRole=${currentUser.role}`);
+        if (!response.ok) throw new Error('Failed to fetch EMRs.');
+        allEMRs = await response.json();
+        container.innerHTML = '';
+        if (allEMRs.length === 0) {
+          container.innerHTML = `<p class="text-gray-500">${t('emr.none_assigned','You have no assigned consultations.')}</p>`;
+          return;
+        }
+        allEMRs.forEach(emr => {
+          const card = document.createElement('div');
+          card.className = 'p-4 border rounded-lg bg-gray-50';
+          card.innerHTML = `
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-bold text-lg text-gray-800">${emr.patient_name || 'N/A'}</h3>
+                <p class="text-sm text-gray-600">${emr.patient_email || ''}</p>
+              </div>
+              <span class="status-badge status-${emr.status}">${(emr.status || '').replace(/_/g,' ')}</span>
+            </div>
+            <p class="text-xs text-gray-500 mt-2">${t('emr.submitted','Submitted')}: ${emr.created_at ? new Date(emr.created_at).toLocaleString() : ''}</p>
+            <button onclick="viewEMRDetailsForDoctor('${emr.id}')" class="mt-4 text-sm bg-gray-700 text-white py-2 px-3 rounded-md hover:bg-gray-800">${t('actions.view_details','View Details')}</button>`;
+          container.appendChild(card);
+        });
+      } catch (error) {
+        container.innerHTML = `<p class="text-red-500">${error.message}</p>`;
+      }
+    }
+
+    // --- ADMIN EMR DETAIL ---
+    function viewEMRDetailsForAdmin(emrId) {
+      currentEMRId = emrId;
+      const emr = allEMRs.find(e => e.id === emrId);
+      if (!emr) return;
+
+      app.innerHTML = `
+        <div class="bg-white p-8 rounded-xl shadow-lg">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">${t('emr.details','Consultation Details')}</h2>
+            <button onclick="renderView('adminDashboard')" class="text-sm font-semibold text-blue-600 hover:text-blue-800" data-i18n="nav.back">&larr; Back</button>
+          </div>
+          <div id="emr-detail-content-admin" class="space-y-4"></div>
+          <div id="admin-actions-section" class="mt-6 pt-6 border-t">
+            <h3 class="text-lg font-semibold text-gray-700">${t('admin.actions','Admin Actions')}</h3>
+            <form id="admin-update-form" class="space-y-4 mt-4">
+              <div>
+                <label for="assign-doctor" class="block text-sm font-medium">${t('admin.assign_doctor','Assign Doctor')}</label>
+                <select id="assign-doctor" name="assignedDoctorId" class="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"></select>
+              </div>
+              <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700" data-i18n="actions.save">Save</button>
+            </form>
+            <div id="admin-update-message" class="hidden mt-4 text-center text-sm"></div>
+          </div>
+        </div>`;
+
+      const detailContainer = document.getElementById('emr-detail-content-admin');
+      detailContainer.innerHTML = `
+        <div class="border-b pb-4">
+          <h3 class="text-lg font-semibold text-gray-800">${t('pdf.section.patient','Patient Data')}</h3>
+          <p><strong class="font-medium text-gray-600">${t('pdf.labels.name','Name')}:</strong> ${emr.patient_name||'N/A'}</p>
+          <p><strong class="font-medium text-gray-600">Email:</strong> ${emr.patient_email||'N/A'}</p>
+          <p><strong class="font-medium text-gray-600">${t('pdf.labels.dob','Date of Birth')}:</strong> ${emr.patient_dob?new Date(emr.patient_dob).toLocaleDateString():'N/A'}</p>
+        </div>
+        <div class="py-4">
+          <h3 class="text-lg font-semibold text-gray-800">${t('pdf.section.medical','Medical Information')}</h3>
+          <p><strong class="font-medium text-gray-600">${t('pdf.labels.symptoms','Symptoms')}:</strong></p>
+          <p class="pl-2">${emr.symptoms||'N/A'}</p>
+          <p class="mt-2"><strong class="font-medium text-gray-600">${t('pdf.labels.history','Medical History')}:</strong></p>
+          <p class="pl-2">${emr.medical_history||'N/A'}</p>
+          <p class="mt-2"><strong class="font-medium text-gray-600">${t('pdf.labels.medication','Current Medication')}:</strong></p>
+          <p class="pl-2">${emr.current_medication||'N/A'}</p>
+        </div>`;
+
+      const doctorSelect = document.getElementById('assign-doctor');
+      doctorSelect.innerHTML = `<option value="">-- ${t('admin.select_doctor','Select a Doctor')} --</option>`;
+      allDoctors.forEach(doc => {
+        const option = document.createElement('option');
+        option.value = doc.user_id;
+        option.textContent = doc.full_name;
+        if (emr.assigned_doctor_id === doc.user_id) option.selected = true;
+        doctorSelect.appendChild(option);
+      });
+      document.getElementById('admin-update-form').addEventListener('submit', handleAdminUpdate);
+      window.applyTranslations();
+    }
+
+    // --- DOCTOR EMR DETAIL ---
+    function viewEMRDetailsForDoctor(emrId) {
+      currentEMRId = emrId;
+      currentEMR = allEMRs.find(e => e.id === emrId);
+      if (!currentEMR) return;
+
+      app.innerHTML = `
+        <div class="bg-white p-8 rounded-xl shadow-lg">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">${t('emr.details','Consultation Details')}</h2>
+            <button onclick="renderView('doctorDashboard')" class="text-sm font-semibold text-blue-600 hover:text-blue-800" data-i18n="nav.back">&larr; Back</button>
+          </div>
+          <div id="emr-detail-content-doctor" class="space-y-4"></div>
+          <div id="doctor-actions-section" class="mt-6 pt-6 border-t">
+            <h3 class="text-lg font-semibold text-gray-700">${t('doctor.report_section','Section #2: Your Report')}</h3>
+            <form id="doctor-form" class="space-y-4 mt-4"></form>
+            <div id="doctor-form-message" class="hidden mt-4 text-center text-sm"></div>
+          </div>
+        </div>`;
+
+      const detailContainer = document.getElementById('emr-detail-content-doctor');
+
+      // Documents
+      const safeArray = (val) => {
+        if (!val) return [];
+        if (Array.isArray(val)) return val;
+        if (typeof val === 'string') { try { const p = JSON.parse(val); return Array.isArray(p) ? p : []; } catch { return []; } }
+        return [];
+      };
+      let documentsHtml = 'N/A';
+      const docs = safeArray(currentEMR.medical_documents);
+      if (docs.length > 0) {
+        documentsHtml = docs.map(doc =>
+          `<a href="${doc.url}" target="_blank" class="text-blue-600 hover:underline">${doc.name || 'Document'}</a> (${t('pdf.labels.doc_password','Password')}: ${doc.password || 'N/A'})`
+        ).join('<br>');
+      }
+
+      detailContainer.innerHTML = `
+        <div class="border-b pb-4">
+          <h3 class="text-lg font-semibold text-gray-800">${t('pdf.section.patient','Patient Data')}</h3>
+          <p><strong class="font-medium text-gray-600">${t('pdf.labels.name','Name')}:</strong> ${currentEMR.patient_name || 'N/A'}</p>
+          <p><strong class="font-medium text-gray-600">Email:</strong> ${currentEMR.patient_email || 'N/A'}</p>
+          <p><strong class="font-medium text-gray-600">${t('pdf.labels.dob','Date of Birth')}:</strong> ${currentEMR.patient_dob ? new Date(currentEMR.patient_dob).toLocaleDateString() : 'N/A'}</p>
+        </div>
+        <div class="py-4">
+          <h3 class="text-lg font-semibold text-gray-800">${t('pdf.section.medical','Medical Information')}</h3>
+          <p><strong class="font-medium text-gray-600">${t('pdf.labels.symptoms','Symptoms')}:</strong></p>
+          <p class="pl-2">${currentEMR.symptoms || 'N/A'}</p>
+          <p class="mt-2"><strong class="font-medium text-gray-600">${t('pdf.labels.history','Medical History')}:</strong></p>
+          <p class="pl-2">${currentEMR.medical_history || 'N/A'}</p>
+          <p class="mt-2"><strong class="font-medium text-gray-600">${t('pdf.labels.medication','Current Medication')}:</strong></p>
+          <p class="pl-2">${currentEMR.current_medication || 'N/A'}</p>
+          <p class="mt-2"><strong class="font-medium text-gray-600">${t('pdf.labels.documents','Medical Documents')}:</strong></p>
+          <p class="pl-2">${documentsHtml}</p>
+        </div>`;
+
+      // PDF button (always available)
+      const actionsSection = document.getElementById('doctor-actions-section');
+      const pdfBar = document.createElement('div');
+      pdfBar.className = 'mt-4';
+      pdfBar.innerHTML = `
+        <button type="button" id="open-pdf-btn"
+          class="w-full py-2 px-4 border rounded-md text-white bg-blue-600 hover:bg-blue-700">
+          ${t('actions.generate_pdf','Generate PDF Report')}
+        </button>`;
+      actionsSection.prepend(pdfBar);
+      document.getElementById('open-pdf-btn').addEventListener('click', () => {
+        if (!currentEMRId) return alert('No EMR selected.');
+        // Pass UI language to backend for localized PDF
+        const lng = i18next.language || 'en';
+        window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf?lng=${encodeURIComponent(lng)}`, '_blank');
+      });
+
+      // Doctor form fields
+      const docForm = document.getElementById('doctor-form');
+      const isReportComplete = isCompleteStatus(currentEMR.status);
+
+      const formFieldsHtml = `
+        <div>
+          <label for="doctor-diagnosis" class="block text-sm font-medium">${t('pdf.labels.diagnosis','Diagnosis')}</label>
+          <textarea id="doctor-diagnosis" name="doctorDiagnosis" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea>
+        </div>
+        <div>
+          <label for="doctor-report" class="block text-sm font-medium">${t('pdf.labels.findings','Report & Findings')}</label>
+          <textarea id="doctor-report" name="doctorReport" rows="4" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea>
+        </div>
+        <div>
+          <label for="doctor-recommendations" class="block text-sm font-medium">${t('pdf.labels.recommendations','Recommendations')}</label>
+          <textarea id="doctor-recommendations" name="doctorRecommendations" rows="4" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea>
+        </div>
+        <div>
+          <label for="doctor-private-notes" class="block text-sm font-medium">${t('doctor.private_notes','Private Notes')}</label>
+          <textarea id="doctor-private-notes" name="doctorPrivateNotes" rows="2" class="mt-1 block w-full px-3 py-2 border rounded-md"></textarea>
+        </div>
+        <fieldset class="border p-4 rounded-md">
+          <legend class="text-sm font-medium px-1">${t('doctor.consult_types','Type of Consultation')}</legend>
+          <div class="mt-2 space-y-2">
+            <div class="flex items-center"><input id="type-office" name="consultationType" type="checkbox" value="Office Visit" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-office" class="ml-2 block text-sm">${t('doctor.ct_office',"Visit in Physician's Office")}</label></div>
+            <div class="flex items-center"><input id="type-home" name="consultationType" type="checkbox" value="Home Visit" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-home" class="ml-2 block text-sm">${t('doctor.ct_home','Visit at Patient\\'s Domicile')}</label></div>
+            <div class="flex items-center"><input id="type-online" name="consultationType" type="checkbox" value="Web-based" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-online" class="ml-2 block text-sm">${t('doctor.ct_online','Web-based Consultation')}</label></div>
+            <div class="flex items-center"><input id="type-phone" name="consultationType" type="checkbox" value="Phone Call" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-phone" class="ml-2 block text-sm">${t('doctor.ct_phone','Phone Call')}</label></div>
+            <div class="flex items-center"><input id="type-review" name="consultationType" type="checkbox" value="Document Review Only" class="h-4 w-4 text-indigo-600 border-gray-300 rounded"><label for="type-review" class="ml-2 block text-sm">${t('doctor.ct_review','Review of Medical Documents Only')}</label></div>
+          </div>
+        </fieldset>
+        <div class="flex justify-between space-x-4">
+          <button type="button" id="save-report-button" class="flex-1 py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700">${t('actions.save','Save')}</button>
+          <button type="button" id="finalize-record-button" class="flex-1 py-2 px-4 border rounded-md text-white bg-green-600 hover:bg-green-700">${t('actions.finalize','Finalize record')}</button>
+        </div>`;
+      docForm.innerHTML = formFieldsHtml;
+
+      if (isReportComplete) {
+        docForm.querySelectorAll('textarea, input[type="checkbox"]').forEach(el => { el.disabled = true; });
+        document.getElementById('save-report-button').style.display = 'none';
+        const finalizeButton = document.getElementById('finalize-record-button');
+        finalizeButton.textContent = t('actions.generate_pdf','Generate PDF Report');
+        finalizeButton.classList.replace('bg-green-600', 'bg-blue-600');
+        finalizeButton.classList.replace('hover:bg-green-700', 'hover:bg-blue-700');
+        finalizeButton.addEventListener('click', () => {
+          const lng = i18next.language || 'en';
+          window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf?lng=${encodeURIComponent(lng)}`, '_blank');
+        });
+      } else {
+        document.getElementById('doctor-diagnosis').value = currentEMR.doctor_diagnosis || '';
+        document.getElementById('doctor-report').value = currentEMR.doctor_report || '';
+        document.getElementById('doctor-recommendations').value = currentEMR.doctor_recommendations || '';
+        document.getElementById('doctor-private-notes').value = currentEMR.doctor_private_notes || '';
+
+        const savedTypes = ensureArray(currentEMR.consultation_type);
+        document.querySelectorAll('input[name="consultationType"]').forEach(cb => {
+          if (savedTypes.includes(cb.value)) cb.checked = true;
+        });
+
+        document.getElementById('save-report-button').addEventListener('click', async () => {
+          await handleDoctorUpdate(currentEMRId, false);
+        });
+        document.getElementById('finalize-record-button').addEventListener('click', async () => {
+          if (confirm(t('confirm.finalize','Are you sure you want to finalize this record? You cannot make further changes.'))) {
+            await handleDoctorUpdate(currentEMRId, true);
+            const lng = i18next.language || 'en';
+            window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf?lng=${encodeURIComponent(lng)}`, '_blank');
+            renderView('doctorDashboard');
+          }
+        });
+      }
+      window.applyTranslations();
+    }
+
+    // --- ADMIN SAVE ---
+    async function handleAdminUpdate(event) {
+      event.preventDefault();
+      const messageDiv = document.getElementById('admin-update-message');
+      messageDiv.classList.add('hidden');
+      const updates = {
+        assignedDoctorId: document.getElementById('assign-doctor').value || null,
+        status: document.getElementById('assign-doctor').value ? 'assigned' : 'submitted_by_patient'
+      };
+      try {
+        await handleApiRequest(`${API_URL}/api/emrs/${currentEMRId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: 'admin', updates })
+        });
+        messageDiv.textContent = t('messages.saved','Changes saved successfully!');
+        messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+      } catch (error) {
+        messageDiv.textContent = t('messages.save_failed','Failed to save changes.');
+        messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+      } finally {
+        messageDiv.classList.remove('hidden');
+      }
+    }
+
+    // --- DOCTOR SAVE / FINALIZE ---
+    async function handleDoctorUpdate(emrId, finalize = false) {
+      const messageDiv = document.getElementById('doctor-form-message');
+      messageDiv.classList.add('hidden');
+
+      const selectedTypes = Array.from(document.querySelectorAll('input[name="consultationType"]:checked')).map(cb => cb.value);
+
+      const updates = {
+        doctorDiagnosis: document.getElementById('doctor-diagnosis').value,
+        doctorReport: document.getElementById('doctor-report').value,
+        doctorRecommendations: document.getElementById('doctor-recommendations').value,
+        doctorPrivateNotes: document.getElementById('doctor-private-notes').value,
+        consultationType: selectedTypes,
+        status: finalize ? 'report_complete' : currentEMR.status
+      };
+
+      try {
+        await handleApiRequest(`${API_URL}/api/emrs/${emrId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: 'doctor', updates })
+        });
+        messageDiv.textContent = t('messages.report_saved','Report saved successfully!');
+        messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+
+        // Update local cache
+        const i = allEMRs.findIndex(e => e.id === emrId);
+        if (i !== -1) {
+          allEMRs[i].doctor_diagnosis = updates.doctorDiagnosis;
+          allEMRs[i].doctor_report = updates.doctorReport;
+          allEMRs[i].doctor_recommendations = updates.doctorRecommendations;
+          allEMRs[i].doctor_private_notes = updates.doctorPrivateNotes;
+          allEMRs[i].consultation_type = updates.consultationType;
+          allEMRs[i].status = updates.status;
+          currentEMR = allEMRs[i];
+        }
+      } catch (error) {
+        messageDiv.textContent = t('messages.report_save_failed','Failed to save report.');
+        messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+      } finally {
+        messageDiv.classList.remove('hidden');
+      }
+    }
+
+    // --- DELETE DOCTOR (used by admin list) ---
+    async function handleDeleteDoctor(userId) {
+      if(!confirm(t('confirm.delete_doctor','Delete this doctor account? This cannot be undone.'))) return;
+      try {
+        const res = await fetch(`${API_URL}/api/users/doctor/${userId}`, { method: 'DELETE' });
+        if(!res.ok) throw new Error('Delete failed');
+        await fetchAllDoctors();
+        displayDoctorListForAdmin();
+      } catch (e) {
+        alert(t('messages.delete_failed','Failed to delete doctor.'));
+      }
+    }
+
+    // --- LOGOUT ---
+    function logout() {
+      currentUser = null; allEMRs = []; allDoctors = []; currentEMRId = null; currentDoctorId = null;
+      initializeApp();
+    }
   </script>
 </body>
 </html>
+
+
