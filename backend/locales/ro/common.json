@@ -1,0 +1,27 @@
+{
+  "server": { "health": "Serviciul funcționează" },
+  "errors": { "not_found": "EMR nu a fost găsit." },
+  "pdf": {
+    "title": "Raport medical WeTreat",
+    "header": "Raport de consultație medicală",
+    "section": {
+      "patient": "Date pacient",
+      "medical": "Informații medicale",
+      "report": "Raportul medicului"
+    },
+    "labels": {
+      "name": "Nume",
+      "dob": "Data nașterii",
+      "symptoms": "Simptome",
+      "history": "Istoric medical",
+      "medication": "Medicație curentă",
+      "documents": "Documente medicale",
+      "doc_password": "Parolă",
+      "diagnosis": "Diagnostic",
+      "findings": "Raport și constatări",
+      "recommendations": "Recomandări",
+      "types": "Tip(uri) de consultație",
+      "generated_on": "Raport generat la"
+    }
+  }
+}
