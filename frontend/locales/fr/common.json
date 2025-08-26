@@ -1,0 +1,48 @@
+{
+  "app": { "title": "Plateforme WeTreat" },
+  "welcome": {
+    "title": "Bienvenue sur WeTreat",
+    "tagline": "Votre plateforme de consultation médicale en ligne de confiance.",
+    "select_role": "Veuillez choisir votre rôle :"
+  },
+  "roles": { "patient": "Patient", "doctor": "Médecin consultant", "admin": "Admin" },
+  "login": { "title": "Connexion au portail", "submit": "Se connecter" },
+  "nav": { "back": "← Retour", "back_welcome": "← Retour à l’accueil" },
+  "auth": { "logout": "Se déconnecter" },
+  "admin": { "title": "Tableau de bord Admin", "manage_doctors": "Gérer les médecins", "create_doctor": "Créer un nouveau médecin", "create_btn": "Créer" },
+  "doctor": { "title": "Consultations assignées" },
+  "patient": { "new_request": "Nouvelle demande de consultation", "instructions_btn": "Instructions" },
+  "sections": { "account": "Compte", "personal": "Données personnelles", "medical": "Données médicales", "doctors": "Médecins consultants" },
+  "form": {
+    "email": { "label": "E‑mail", "placeholder": "nom@exemple.fr" },
+    "password": { "label": "Mot de passe", "placeholder": "Votre mot de passe" },
+    "fullname": { "label": "Nom complet", "placeholder": "ex. Jeanne Dupont" },
+    "dob": { "label": "Date de naissance" },
+    "symptoms": { "label": "Symptômes", "placeholder": "ex. douleur thoracique, dyspnée" },
+    "history": { "label": "Antécédents médicaux", "placeholder": "ex. ICP, HTA" },
+    "medication": { "label": "Traitement actuel", "placeholder": "ex. aspirine, statine" },
+    "documents": {
+      "title": "Documents médicaux & imagerie",
+      "add": "+ Ajouter un document",
+      "url_ph": "URL vers un PDF ou un visualiseur DICOM",
+      "desc_ph": "Brève description",
+      "pw_ph": "Mot de passe (si nécessaire)"
+    },
+    "notes": { "label": "Notes", "placeholder": "Médecin préféré ou disponibilités" },
+    "submit": "Soumettre pour examen"
+  },
+  "fees": { "title": "Honoraires de consultation (€)", "office": "Cabinet", "home": "Domicile", "video": "Vidéo", "phone": "Téléphone", "review": "Relecture" },
+  "doctors": { "none": "Aucun médecin disponible.", "expertise": "Expertise :", "affiliation": "Affiliation :" },
+  "generic": { "edit": "Modifier", "delete": "Supprimer", "understand": "Compris" },
+  "instr": {
+    "title": "Instructions pour compléter la demande de consultation",
+    "read_first": "Veuillez lire attentivement avant de soumettre.",
+    "form": {"h": "1) Remplir le formulaire", "li1": "Fournissez des informations personnelles et médicales exactes.", "li2": "Décrivez clairement les symptômes (début, facteurs déclenchants, durée).", "li3": "Consultez éventuellement les profils et ajoutez des notes."},
+    "upload": {"h": "2) Téléversement des documents", "li1": "Autorisés : PDF et liens PACS/DICOM hospitaliers.", "li2": "Non acceptés : WhatsApp, WeTransfer, pièces jointes e‑mail.", "li3": "WeTreat est en lecture seule : pas de téléchargement/redistribution."},
+    "onboarding": {"h": "3) Suite à la soumission", "li1": "Vérification admin (exhaustivité, RGPD).", "li2": "Contact direct par e‑mail ou téléphone.", "li3": "Paiement & consentement requis avant l’assignation."},
+    "consult": {"h": "4) Consultation et rapport", "li1": "Le médecin rédige un rapport.", "li2": "Rapport au format PDF; e‑signature optionnelle.", "li3": "Les admins peuvent transmettre le rapport au patient."},
+    "legal": {"h": "5) Responsabilités et mentions légales", "li1": "La responsabilité médicale incombe au médecin consultant.", "li2": "WeTreat fournit uniquement une plateforme (télé)consultation sécurisée.", "li3": "Traitement des données conforme au RGPD et au droit de l’UE.", "li4": "La soumission implique le consentement au traitement des données."},
+    "note": "Si vos PDF sont protégés par mot de passe, indiquez‑le dans la section Documents."
+  },
+  "generic2": { "loading_emrs": "Chargement des EMR…", "none_emrs": "Aucun EMR soumis pour l’instant.", "assigned_none": "Aucune consultation assignée." }
+}
