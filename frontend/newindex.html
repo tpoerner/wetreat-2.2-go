@@ -1,5 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+<style>
+  .lang-switch { position: fixed; top: 1rem; right: 1rem; display:flex; gap:.5rem; z-index:60 }
+  .lang-switch button { padding:.35rem .6rem; border:1px solid #e5e7eb; border-radius:.5rem; background:#fff; cursor:pointer; font-weight:600 }
+  .lang-switch button.active { border-color:#111827 }
+</style>
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -20,6 +26,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+<nav class="lang-switch" aria-label="Language switcher">
+  <button data-lang="en" class="active">EN</button>
+  <button data-lang="de">DE</button>
+  <button data-lang="fr">FR</button>
+  <button data-lang="ro">RO</button>
+</nav>
 
     <div id="app" class="w-full max-w-3xl mx-auto"></div>
     <div id="modal-container"></div>
@@ -110,6 +122,7 @@
         // --- RENDER & NAV ---
         function renderView(viewName) {
             app.innerHTML = templates[viewName] || '<p>Loading...</p>';
+            WT_applyTranslations && WT_applyTranslations();
             const post = {
                 login: () => document.getElementById('login-form').addEventListener('submit', handleLogin),
                 patientForm: renderPatientForm,
@@ -137,7 +150,7 @@
                     <button onclick="renderView('welcome')" class="mt-6 w-full text-center text-blue-600 hover:underline text-sm">&larr; Back to Welcome</button>
                 </div>`;
             app.innerHTML = view;
-
+            WT_applyTranslations && WT_applyTranslations();
             const form = document.getElementById('patient-form');
             form.innerHTML = `
                 <fieldset class="border p-4 rounded-md">
@@ -194,6 +207,7 @@
                 </fieldset>
                 <button type="submit" class="w-full flex justify-center py-3 px-4 mt-4 border rounded-md text-white bg-blue-600 hover:bg-blue-700">Submit for Review</button>
             `;
+            WT_applyTranslations && WT_applyTranslations();
             form.addEventListener('submit', handlePatientFormSubmit);
             renderDoctorProfilesForPatient();
             addDocumentRow();
@@ -208,6 +222,7 @@
                 <input type="text" placeholder="Short description" class="px-2 py-1 border rounded-md" name="doc_name">
                 <input type="text" placeholder="Password (if needed)" class="px-2 py-1 border rounded-md" name="doc_password">`;
             container.appendChild(row);
+            WT_applyTranslations && WT_applyTranslations();
         }
 
         function renderDoctorProfilesForPatient() {
@@ -227,6 +242,7 @@
                         <p><b>Affiliation:</b> ${doc.current_affiliation || 'N/A'}</p>
                     </div>
                 </div>`).join('');
+            WT_applyTranslations && WT_applyTranslations();
         }
 
         // --- ADMIN: MANAGE DOCTORS ---
@@ -244,6 +260,7 @@
                   <div id="create-doctor-message" class="hidden mt-4 text-center text-sm"></div>
                 </div>
               </div>`;
+            WT_applyTranslations && WT_applyTranslations();
             const form = document.getElementById('create-doctor-form');
             form.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -268,6 +285,7 @@
                 </fieldset>
                 <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-green-600 hover:bg-green-700">Create Doctor</button>
             `;
+            WT_applyTranslations && WT_applyTranslations();
             form.addEventListener('submit', handleCreateDoctor);
             displayDoctorListForAdmin();
         }
@@ -288,6 +306,7 @@
                         <button onclick="handleDeleteDoctor('${doc.user_id}')" class="ml-4 text-sm text-red-600 hover:underline">Delete</button>
                     </div>
                 </div>`).join('');
+            WT_applyTranslations && WT_applyTranslations();            
         }
 
     // Instruction to complete the patient input form
@@ -351,6 +370,7 @@
       </div>
     </div>
   `;
+    WT_applyTranslations && WT_applyTranslations();
 }
 
 function closePatientInstructionsModal(event) {
@@ -370,6 +390,7 @@ function closePatientInstructionsModal(event) {
                         <form id="edit-doctor-form" class="space-y-4"></form>
                     </div>
                 </div>`;
+            WT_applyTranslations && WT_applyTranslations();
             const form = document.getElementById('edit-doctor-form');
             form.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -393,6 +414,7 @@ function closePatientInstructionsModal(event) {
                 <button type="submit" class="w-full flex justify-center py-2 px-4 border rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Save Changes</button>
                 <button type="button" onclick="closeEditDoctorModal()" class="w-full flex justify-center py-2 px-4 border rounded-md bg-gray-200">Cancel</button>
             `;
+            WT_applyTranslations && WT_applyTranslations();
             form.addEventListener('submit', handleEditDoctor);
         }
         function closeEditDoctorModal(e){ if (e && e.target !== e.currentTarget) return; modalContainer.innerHTML=''; }
@@ -540,6 +562,7 @@ function closePatientInstructionsModal(event) {
             const container = document.getElementById('emr-list-container');
             if(!container) return;
             container.innerHTML = '<p>Loading EMRs...</p>';
+            WT_applyTranslations && WT_applyTranslations();
             try {
                 const response = await fetch(`${API_URL}/api/emrs?userId=${currentUser.id}&userRole=${currentUser.role}`);
                 if (!response.ok) throw new Error('Failed to fetch EMRs.');
@@ -560,6 +583,7 @@ function closePatientInstructionsModal(event) {
                         <p class="text-xs text-gray-500 mt-2">Submitted: ${emr.created_at ? new Date(emr.created_at).toLocaleString() : ''}</p>
                         <button onclick="viewEMRDetailsForAdmin('${emr.id}')" class="mt-4 text-sm bg-gray-700 text-white py-2 px-3 rounded-md hover:bg-gray-800">View Details</button>`;
                     container.appendChild(card);
+                    WT_applyTranslations && WT_applyTranslations();
                 });
             } catch (error) { container.innerHTML = `<p class="text-red-500">${error.message}</p>`; }
         }
@@ -568,6 +592,7 @@ function closePatientInstructionsModal(event) {
             const container = document.getElementById('doctor-emr-list-container');
             if(!container) return;
             container.innerHTML = '<p>Loading assigned EMRs...</p>';
+            WT_applyTranslations && WT_applyTranslations();
             try {
                 const response = await fetch(`${API_URL}/api/emrs?userId=${currentUser.id}&userRole=${currentUser.role}`);
                 if (!response.ok) throw new Error('Failed to fetch EMRs.');
@@ -588,6 +613,7 @@ function closePatientInstructionsModal(event) {
                         <p class="text-xs text-gray-500 mt-2">Submitted: ${emr.created_at ? new Date(emr.created_at).toLocaleString() : ''}</p>
                         <button onclick="viewEMRDetailsForDoctor('${emr.id}')" class="mt-4 text-sm bg-gray-700 text-white py-2 px-3 rounded-md hover:bg-gray-800">View Details</button>`;
                     container.appendChild(card);
+                    WT_applyTranslations && WT_applyTranslations();
                 });
             } catch (error) { container.innerHTML = `<p class="text-red-500">${error.message}</p>`; }
         }
@@ -616,7 +642,7 @@ function closePatientInstructionsModal(event) {
                         <div id="admin-update-message" class="hidden mt-4 text-center text-sm"></div>
                     </div>
                 </div>`;
-
+            WT_applyTranslations && WT_applyTranslations();
             const detailContainer = document.getElementById('emr-detail-content-admin');
             detailContainer.innerHTML = `
                 <div class="border-b pb-4">
@@ -634,7 +660,7 @@ function closePatientInstructionsModal(event) {
                     <p class="mt-2"><strong class="font-medium text-gray-600">Current Medication:</strong></p>
                     <p class="pl-2">${emr.current_medication||'N/A'}</p>
                 </div>`;
-
+            WT_applyTranslations && WT_applyTranslations();
             const doctorSelect = document.getElementById('assign-doctor');
             doctorSelect.innerHTML = '<option value="">-- Select a Doctor --</option>';
             allDoctors.forEach(doc => {
@@ -665,7 +691,7 @@ function closePatientInstructionsModal(event) {
                         <div id="doctor-form-message" class="hidden mt-4 text-center text-sm"></div>
                     </div>
                 </div>`;
-
+            WT_applyTranslations && WT_applyTranslations();
             const detailContainer = document.getElementById('emr-detail-content-doctor');
 
             // Documents (safe)
@@ -695,7 +721,7 @@ function closePatientInstructionsModal(event) {
                     <p class="mt-2"><strong class="font-medium text-gray-600">Medical Documents:</strong></p>
                     <p class="pl-2">${documentsHtml}</p>
                 </div>`;
-
+            WT_applyTranslations && WT_applyTranslations();
             const docForm = document.getElementById('doctor-form');
             const isReportComplete = isCompleteStatus(currentEMR.status);
 
@@ -709,6 +735,7 @@ function closePatientInstructionsModal(event) {
                     Generate PDF Report
                 </button>`;
             actionsSection.prepend(pdfBar);
+            WT_applyTranslations && WT_applyTranslations();
             document.getElementById('open-pdf-btn').addEventListener('click', () => {
                 if (!currentEMRId) return alert('No EMR selected.');
                 window.open(`${API_URL}/api/emrs/${currentEMRId}/generate-pdf`, '_blank');
@@ -747,7 +774,7 @@ function closePatientInstructionsModal(event) {
                     <button type="button" id="finalize-record-button" class="flex-1 py-2 px-4 border rounded-md text-white bg-green-600 hover:bg-green-700">Finalize record</button>
                 </div>`;
             docForm.innerHTML = formFieldsHtml;
-
+            WT_applyTranslations && WT_applyTranslations();
             if (isReportComplete) {
                 // Disable edits
                 docForm.querySelectorAll('textarea, input[type="checkbox"]').forEach(el => { el.disabled = true; });
@@ -855,7 +882,257 @@ function closePatientInstructionsModal(event) {
 
         // --- INIT ---
         async function initializeApp() { await fetchAllDoctors(); renderView('welcome'); }
+        WT_applyTranslations && WT_applyTranslations();
         initializeApp();
     </script>
+
+<script>
+  // --- Tiny dict: expand as needed
+  const L10N = {
+    en: {
+      "app.title": "WeTreat Platform",
+      "welcome.title": "Welcome to WeTreat",
+      "welcome.tagline": "Your trusted online medical consultation platform.",
+      "welcome.select_role": "Please select your role:",
+      "roles.patient": "Patient",
+      "roles.doctor": "Consulting Physician",
+      "roles.admin": "Admin",
+      "login.title": "Portal Login",
+      "login.submit": "Login",
+      "nav.back": "← Back",
+      "nav.back_welcome": "← Back to Welcome",
+      "patient.new_request": "New Consultation Request",
+      "patient.instructions_btn": "Instructions / Read Me",
+      "sections.account": "Account",
+      "sections.personal": "Personal Data",
+      "sections.medical": "Medical Data",
+      "sections.doctors": "Consulting Physicians",
+      "form.email.label": "Email",
+      "form.email.placeholder": "you@example.com",
+      "form.password.label": "Password",
+      "form.password.placeholder": "Your password",
+      "form.fullname.label": "Full Name",
+      "form.fullname.placeholder": "John Smith",
+      "form.dob.label": "Date of Birth",
+      "form.symptoms.label": "Symptoms",
+      "form.symptoms.placeholder": "Describe symptoms (onset, duration, triggers)…",
+      "form.history.label": "Medical History",
+      "form.history.placeholder": "Relevant past diagnoses, surgeries, etc.",
+      "form.medication.label": "Current Medication",
+      "form.medication.placeholder": "Drug, dose, schedule…",
+      "form.documents.title": "Medical Documents & Imaging",
+      "form.documents.add": "+ Add Document",
+      "form.documents.url_ph": "URL to PDF or DICOM Web Viewer",
+      "form.documents.desc_ph": "Short description",
+      "form.documents.pw_ph": "Password (if needed)",
+      "form.notes.label": "Notes",
+      "form.notes.placeholder": "Doctor preference or scheduling needs…",
+      "form.submit": "Submit for Review",
+      "admin.title": "Admin Dashboard",
+      "admin.manage_doctors": "Manage Doctors",
+      "auth.logout": "Logout",
+      "doctor.title": "Assigned Consultations",
+      "actions.view_details": "View Details",
+      "actions.save": "Save",
+      "actions.finalize": "Finalize record",
+      "actions.generate_pdf": "Generate PDF Report"
+    },
+    de: {
+      "app.title": "WeTreat Plattform",
+      "welcome.title": "Willkommen bei WeTreat",
+      "welcome.tagline": "Ihre zuverlässige Plattform für medizinische Beratung.",
+      "welcome.select_role": "Bitte wählen Sie Ihre Rolle:",
+      "roles.patient": "Patient",
+      "roles.doctor": "Konsiliararzt",
+      "roles.admin": "Admin",
+      "login.title": "Portal-Anmeldung",
+      "login.submit": "Anmelden",
+      "nav.back": "← Zurück",
+      "nav.back_welcome": "← Zurück zur Startseite",
+      "patient.new_request": "Neue Konsultationsanfrage",
+      "patient.instructions_btn": "Anleitung / Hinweise",
+      "sections.account": "Konto",
+      "sections.personal": "Personenbezogene Daten",
+      "sections.medical": "Medizinische Daten",
+      "sections.doctors": "Konsiliarärzte",
+      "form.email.label": "E-Mail",
+      "form.email.placeholder": "sie@beispiel.de",
+      "form.password.label": "Passwort",
+      "form.password.placeholder": "Ihr Passwort",
+      "form.fullname.label": "Vollständiger Name",
+      "form.fullname.placeholder": "Max Mustermann",
+      "form.dob.label": "Geburtsdatum",
+      "form.symptoms.label": "Symptome",
+      "form.symptoms.placeholder": "Beschreiben Sie Symptome (Beginn, Dauer, Auslöser)…",
+      "form.history.label": "Krankengeschichte",
+      "form.history.placeholder": "Relevante Diagnosen, Operationen usw.",
+      "form.medication.label": "Aktuelle Medikamente",
+      "form.medication.placeholder": "Wirkstoff, Dosis, Schema…",
+      "form.documents.title": "Medizinische Dokumente & Bildgebung",
+      "form.documents.add": "+ Dokument hinzufügen",
+      "form.documents.url_ph": "URL zu PDF oder DICOM Web Viewer",
+      "form.documents.desc_ph": "Kurzbeschreibung",
+      "form.documents.pw_ph": "Passwort (falls nötig)",
+      "form.notes.label": "Notizen",
+      "form.notes.placeholder": "Arztpräferenz oder Terminwünsche…",
+      "form.submit": "Zur Prüfung einreichen",
+      "admin.title": "Admin-Dashboard",
+      "admin.manage_doctors": "Ärzte verwalten",
+      "auth.logout": "Abmelden",
+      "doctor.title": "Zugewiesene Konsultationen",
+      "actions.view_details": "Details ansehen",
+      "actions.save": "Speichern",
+      "actions.finalize": "Abschließen",
+      "actions.generate_pdf": "PDF-Bericht erstellen"
+    },
+    fr: {
+      "app.title": "Plateforme WeTreat",
+      "welcome.title": "Bienvenue sur WeTreat",
+      "welcome.tagline": "Votre plateforme fiable de consultation médicale en ligne.",
+      "welcome.select_role": "Veuillez choisir votre rôle :",
+      "roles.patient": "Patient",
+      "roles.doctor": "Médecin consultant",
+      "roles.admin": "Admin",
+      "login.title": "Connexion au portail",
+      "login.submit": "Se connecter",
+      "nav.back": "← Retour",
+      "nav.back_welcome": "← Retour à l’accueil",
+      "patient.new_request": "Nouvelle demande de consultation",
+      "patient.instructions_btn": "Instructions / À lire",
+      "sections.account": "Compte",
+      "sections.personal": "Données personnelles",
+      "sections.medical": "Données médicales",
+      "sections.doctors": "Médecins consultants",
+      "form.email.label": "E-mail",
+      "form.email.placeholder": "vous@exemple.fr",
+      "form.password.label": "Mot de passe",
+      "form.password.placeholder": "Votre mot de passe",
+      "form.fullname.label": "Nom complet",
+      "form.fullname.placeholder": "Jean Dupont",
+      "form.dob.label": "Date de naissance",
+      "form.symptoms.label": "Symptômes",
+      "form.symptoms.placeholder": "Décrivez les symptômes (début, durée, déclencheurs)…",
+      "form.history.label": "Antécédents médicaux",
+      "form.history.placeholder": "Diagnostics, chirurgies, etc.",
+      "form.medication.label": "Traitement en cours",
+      "form.medication.placeholder": "Médicament, dose, rythme…",
+      "form.documents.title": "Documents médicaux & imagerie",
+      "form.documents.add": "+ Ajouter un document",
+      "form.documents.url_ph": "URL vers un PDF ou un DICOM Web Viewer",
+      "form.documents.desc_ph": "Brève description",
+      "form.documents.pw_ph": "Mot de passe (si nécessaire)",
+      "form.notes.label": "Notes",
+      "form.notes.placeholder": "Préférence de médecin ou disponibilités…",
+      "form.submit": "Soumettre pour examen",
+      "admin.title": "Tableau de bord Admin",
+      "admin.manage_doctors": "Gérer les médecins",
+      "auth.logout": "Se déconnecter",
+      "doctor.title": "Consultations assignées",
+      "actions.view_details": "Voir les détails",
+      "actions.save": "Enregistrer",
+      "actions.finalize": "Finaliser",
+      "actions.generate_pdf": "Générer le PDF"
+    },
+    ro: {
+      "app.title": "Platforma WeTreat",
+      "welcome.title": "Bun venit la WeTreat",
+      "welcome.tagline": "Platforma ta de încredere pentru consultații medicale online.",
+      "welcome.select_role": "Selectează rolul:",
+      "roles.patient": "Pacient",
+      "roles.doctor": "Medic consultant",
+      "roles.admin": "Admin",
+      "login.title": "Autentificare Portal",
+      "login.submit": "Autentificare",
+      "nav.back": "← Înapoi",
+      "nav.back_welcome": "← Înapoi la început",
+      "patient.new_request": "Cerere nouă de consultație",
+      "patient.instructions_btn": "Instrucțiuni / Citește",
+      "sections.account": "Cont",
+      "sections.personal": "Date personale",
+      "sections.medical": "Date medicale",
+      "sections.doctors": "Medici consultanți",
+      "form.email.label": "Email",
+      "form.email.placeholder": "tu@exemplu.ro",
+      "form.password.label": "Parolă",
+      "form.password.placeholder": "Parola ta",
+      "form.fullname.label": "Nume complet",
+      "form.fullname.placeholder": "Ion Popescu",
+      "form.dob.label": "Data nașterii",
+      "form.symptoms.label": "Simptome",
+      "form.symptoms.placeholder": "Descrie simptomele (debut, durată, factori)…",
+      "form.history.label": "Istoric medical",
+      "form.history.placeholder": "Diagnostice, intervenții etc.",
+      "form.medication.label": "Medicație curentă",
+      "form.medication.placeholder": "Medicament, doză, schemă…",
+      "form.documents.title": "Documente medicale & imagistică",
+      "form.documents.add": "+ Adaugă document",
+      "form.documents.url_ph": "URL către PDF sau DICOM Web Viewer",
+      "form.documents.desc_ph": "Descriere scurtă",
+      "form.documents.pw_ph": "Parolă (dacă e cazul)",
+      "form.notes.label": "Note",
+      "form.notes.placeholder": "Preferințe pentru medic sau programare…",
+      "form.submit": "Trimite pentru verificare",
+      "admin.title": "Panou Admin",
+      "admin.manage_doctors": "Administrare medici",
+      "auth.logout": "Deconectare",
+      "doctor.title": "Consultații alocate",
+      "actions.view_details": "Vezi detalii",
+      "actions.save": "Salvează",
+      "actions.finalize": "Finalizează",
+      "actions.generate_pdf": "Generează PDF"
+    }
+  };
+
+  // current language (persist in localStorage)
+  let WT_LANG = localStorage.getItem('WT_LANG') || 'en';
+
+  function tr(key, fallback) {
+    const dict = L10N[WT_LANG] || L10N.en;
+    return (dict && dict[key]) || fallback || L10N.en[key] || key;
+  }
+
+  function applyTranslations() {
+    // text nodes
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const html = el.getAttribute('data-i18n-html') === 'true';
+      const val = tr(key);
+      if (html) el.innerHTML = val; else el.textContent = val;
+    });
+    // placeholders
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      el.setAttribute('placeholder', tr(key));
+    });
+    // title
+    const titleEl = document.querySelector('title[data-i18n]');
+    if (titleEl) titleEl.textContent = tr(titleEl.getAttribute('data-i18n'));
+    document.documentElement.lang = WT_LANG;
+  }
+
+  // wire switcher
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.lang-switch [data-lang]');
+    if (!btn) return;
+    WT_LANG = btn.getAttribute('data-lang') || 'en';
+    localStorage.setItem('WT_LANG', WT_LANG);
+    document.querySelectorAll('.lang-switch button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyTranslations();
+  });
+
+  // call this after each view render
+  window.WT_applyTranslations = applyTranslations;
+
+  // optional helper to open PDF with language param (use wherever you call window.open for PDF)
+  window.WT_openPdf = function(emrId, apiUrl) {
+    const lng = encodeURIComponent(WT_LANG || 'en');
+    window.open(`${apiUrl}/api/emrs/${emrId}/generate-pdf?lng=${lng}`, '_blank');
+  };
+
+  // initial apply (in case initial view is already in DOM)
+  applyTranslations();
+</script>
+    
 </body>
 </html>
